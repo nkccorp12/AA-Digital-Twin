@@ -1,11 +1,13 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import SpriteText from 'three-spritetext';
 import * as THREE from 'three';
 import { getNodeDisplayValue } from './utils/graphUtils.js';
+import { setInitial3DPositions } from './utils/forceSimulation.js';
 
 export default function Graph3D({ nodes = [], links = [] }) {
   const fgRef = useRef();
+  const [isRotating, setIsRotating] = useState(true);
   
   // Use the passed mock data or empty arrays as fallback
   const data = {
@@ -13,30 +15,46 @@ export default function Graph3D({ nodes = [], links = [] }) {
     links
   };
 
-  // Configure charge force like in demo + camera distance
+  // Configure charge force like in demo + camera orbit
   useEffect(() => {
     if (fgRef.current && nodes.length > 0) {
       fgRef.current.d3Force('charge').strength(-120);
       
-      // Set initial camera further out for better overview
-      setTimeout(() => {
-        fgRef.current.cameraPosition(
-          { x: 350, y: 350, z: 350 },  // Perfect distance for overview
-          { x: 0, y: 0, z: 0 },        // Look at center
-          1000                         // Animation duration
-        );
-      }, 100);
+      // Set initial 3D positions for proper Z-layering
+      setInitial3DPositions(nodes);
+      
+      // Set initial camera position like in example
+      const distance = 700;
+      fgRef.current.cameraPosition({ z: distance });
+      
+      // Start camera orbit animation
+      let angle = 0;
+      const rotationInterval = setInterval(() => {
+        if (fgRef.current) {
+          fgRef.current.cameraPosition({
+            x: distance * Math.sin(angle),
+            z: distance * Math.cos(angle)
+          });
+          angle += Math.PI / 1000; // Much slower rotation
+        }
+      }, 10);
+      
+      // Cleanup interval on component unmount
+      return () => {
+        clearInterval(rotationInterval);
+      };
     }
   }, [nodes]);
 
   return (
     <ForceGraph3D
-      ref={fgRef}
-      graphData={data}
-      nodeLabel={node => node.label || node.id}  // Tooltip shows label like 2D
-      nodeVal={0}                      // Disable auto node size (causes standard spheres)
-      nodeColor={() => 'transparent'}  // Make auto nodes invisible
-      nodeOpacity={0}                  // Make auto nodes completely transparent
+        ref={fgRef}
+        graphData={data}
+        enableNavigationControls={true}
+        nodeLabel={node => node.label || node.id}  // Tooltip shows label like 2D
+        nodeVal={0}                      // Disable auto node size (causes standard spheres)
+        nodeColor={() => 'transparent'}  // Make auto nodes invisible
+        nodeOpacity={0}                  // Make auto nodes completely transparent
       nodeThreeObject={node => {
         // Create group for shape + labels
         const group = new THREE.Group();
@@ -100,6 +118,7 @@ export default function Graph3D({ nodes = [], links = [] }) {
       nodeThreeObjectExtend={true}     // like in demo
       linkDirectionalParticles={2}     // animated Partikel auf Links
       linkDirectionalParticleSpeed={0.005}
+      linkDirectionalParticleColor="#FF0000"  // rote Partikel
       backgroundColor="#111111"        // dunkler Hintergrund
       width={window.innerWidth / 2}  // Half width for split screen
       height={window.innerHeight}

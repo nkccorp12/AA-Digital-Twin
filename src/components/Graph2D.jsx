@@ -121,7 +121,7 @@ const Graph2D = ({
         linkDirectionalParticles={GRAPH_CONSTANTS.GRAPH_2D.PARTICLE_COUNT}
         linkDirectionalParticleWidth={GRAPH_CONSTANTS.GRAPH_2D.PARTICLE_WIDTH}
         linkDirectionalParticleSpeed={GRAPH_CONSTANTS.GRAPH_2D.PARTICLE_SPEED}
-        linkDirectionalParticleColor={GRAPH_CONSTANTS.COLORS.TEXT_PRIMARY}
+        linkDirectionalParticleColor="#FF0000"
         
         // Interaction
         enableNodeDrag={true}
