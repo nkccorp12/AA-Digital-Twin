@@ -46,9 +46,9 @@ export const GRAPH_CONSTANTS = {
   // Force simulation settings
   FORCES: {
     '2D': {
-      CHARGE_STRENGTH: -50,   // +10% stärkere Abstoßung
-      LINK_DISTANCE_BASE: 175, // +10% mehr Basis-Abstand  
-      LINK_DISTANCE_MULTIPLIER: 50 // +10% mehr Gewichtung
+      CHARGE_STRENGTH: -80,   // Stärkere Abstoßung für mehr Spreizung
+      LINK_DISTANCE_BASE: 225, // Größere Basis-Abstände  
+      LINK_DISTANCE_MULTIPLIER: 70 // Mehr Gewichtung für luftigeres Layout
     },
     '3D': {
       CHARGE_STRENGTH: -30,   // Gleiche Werte wie 2D - gleiche Physik!
