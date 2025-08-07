@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Graph2D from './graph2d';
 import Graph3D from './graph3d';
 import { prepareNodes } from './utils/graphUtils.js';
@@ -40,19 +40,54 @@ function App() {
       });
   }, []);
 
-  // Prepare nodes with computed properties for 2D graph
-  const enhancedNodes = prepareNodes(nodes, links);
-  
-  // Clean nodes for consistent data (remove D3 artifacts but keep positions)
-  const cleanNodes = enhancedNodes.map(({ vx, vy, vz, index, ...rest }) => ({ ...rest }));
-  
-  console.log('🔄 App: Node processing:', {
-    originalCount: nodes.length,
-    enhancedCount: enhancedNodes.length,
-    cleanedCount: cleanNodes.length,
-    sampleEnhanced: enhancedNodes[0],
-    sampleCleaned: cleanNodes[0]
-  });
+  // Initialize positions for nodes (only once before cloning)
+  const initPositions = (nodeArray) => {
+    nodeArray.forEach(node => {
+      if (!node.x) node.x = Math.random() * 400 - 200;
+      if (!node.y) node.y = Math.random() * 400 - 200;
+      if (!node.z) node.z = Math.random() * 400 - 200;
+    });
+  };
+
+  // Prepare nodes with computed properties and create separate data for each graph
+  const [nodes2D, nodes3D, links2D, links3D] = useMemo(() => {
+    if (nodes.length === 0) return [[], [], [], []];
+    
+    console.log('📊 App: Creating separate graph data...');
+    
+    // Prepare nodes with computed properties
+    const enhancedNodes = prepareNodes(nodes, links);
+    
+    // Clean nodes (remove D3 artifacts but keep positions)
+    const cleanNodes = enhancedNodes.map(({ vx, vy, vz, index, ...rest }) => ({ ...rest }));
+    
+    // Initialize positions BEFORE cloning
+    initPositions(cleanNodes);
+    
+    // Create completely separate node arrays via deep clone
+    const separateNodes2D = JSON.parse(JSON.stringify(cleanNodes));
+    const separateNodes3D = JSON.parse(JSON.stringify(cleanNodes));
+    
+    // Create separate link arrays with ID validation
+    const separateLinks2D = links.map(link => ({
+      ...link,
+      source: typeof link.source === 'object' ? link.source.id : link.source,
+      target: typeof link.target === 'object' ? link.target.id : link.target
+    }));
+    const separateLinks3D = JSON.parse(JSON.stringify(separateLinks2D));
+    
+    console.log('✅ App: Separate graph data created:', {
+      nodes2D: separateNodes2D.length,
+      nodes3D: separateNodes3D.length,
+      links2D: separateLinks2D.length,
+      links3D: separateLinks3D.length,
+      sampleNode2D: separateNodes2D[0],
+      sampleNode3D: separateNodes3D[0],
+      sampleLink2D: separateLinks2D[0]
+    });
+    
+    return [separateNodes2D, separateNodes3D, separateLinks2D, separateLinks3D];
+  }, [nodes, links]);
 
   const dimensions = {
     width: window.innerWidth / 2,
@@ -91,8 +126,8 @@ function App() {
         overflow: 'hidden'  // Prevent scrolling in 2D section
       }}>
         <Graph2D
-          nodes={cleanNodes}
-          links={links}
+          nodes={nodes2D}
+          links={links2D}
           dimensions={dimensions}
           onNodeClick={(node) => console.log('2D clicked:', node)}
         />
@@ -117,8 +152,8 @@ function App() {
         overflow: 'hidden'  // Prevent scrolling in 3D section
       }}>
         <Graph3D 
-          nodes={cleanNodes}
-          links={links}
+          nodes={nodes3D}
+          links={links3D}
           dimensions={dimensions}
           onNodeClick={(node) => console.log('3D clicked:', node)}
           isRotating={isRotating}
