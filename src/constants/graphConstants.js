@@ -11,7 +11,7 @@ export const GRAPH_CONSTANTS = {
   COLORS: {
     BACKGROUND: '#000000',
     LINK_DEFAULT: 'rgba(255,255,255,0.8)',
-    PARTICLE_COLOR: '#FF0000', // Red particles
+    PARTICLE_COLOR: 'rgba(255, 0, 0, 0.5)', // Transparent red particles
     TEXT_PRIMARY: '#ffffff',
     TEXT_VALUE: '#FFD700', // Gold for values
     NODE_FALLBACK: '#6B7280'
@@ -22,15 +22,16 @@ export const GRAPH_CONSTANTS = {
     FONT_SIZE: 12,
     VALUE_FONT_SIZE: 10,
     LINK_WIDTH_MULTIPLIER: 2,
-    PARTICLE_COUNT: 1,
-    PARTICLE_WIDTH: 2,
-    PARTICLE_SPEED: 0.01
+    PARTICLE_COUNT: 3,
+    PARTICLE_WIDTH: 6,
+    PARTICLE_SPEED: 0.005
   },
 
   // 3D specific constants  
   GRAPH_3D: {
     TEXT_HEIGHT: 8,
     VALUE_TEXT_HEIGHT: 6,
+    LINK_TEXT_HEIGHT: 4, // Increased from 3 for better readability
     TEXT_OFFSET_Y: 10,
     VALUE_OFFSET_Y: -8,
     LINK_WIDTH_MULTIPLIER: 3,

@@ -41,6 +41,38 @@ const NodeLegend = ({
         borderTop: '1px solid rgba(255, 255, 255, 0.1)'
       }}
     >
+      {/* Logo ganz links am Viewport-Rand */}
+      <div style={{
+        position: 'absolute',
+        left: '16px',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        zIndex: 10000
+      }}>
+        <img 
+          src="/logo.png" 
+          alt="Logo" 
+          style={{
+            height: '32px',
+            width: 'auto',
+            opacity: 0.9,
+            filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))'
+          }}
+        />
+        <div style={{
+          color: 'white',
+          fontSize: '16px',
+          fontWeight: 'bold',
+          textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
+          letterSpacing: '0.3px'
+        }}>
+          Risk Sim
+        </div>
+      </div>
+      
       <div style={{
         maxWidth: '1200px',
         marginLeft: 'auto',
@@ -58,12 +90,6 @@ const NodeLegend = ({
           gap: '8px',
           flex: '0 0 auto'
         }}>
-          <span style={{
-            color: 'white',
-            fontSize: '12px'
-          }}>
-            📊 2D View ({Math.round(leftPanelWidth)}%)
-          </span>
           <button
             onClick={() => onToggleFullscreen('2d')}
             style={{
@@ -89,7 +115,7 @@ const NodeLegend = ({
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
-          gap: '24px',
+          gap: '16px',
           flex: '1 1 auto'
         }}>
           {nodeTypes.map((nodeType) => (
@@ -139,12 +165,6 @@ const NodeLegend = ({
           gap: '8px',
           flex: '0 0 auto'
         }}>
-          <span style={{
-            color: 'white',
-            fontSize: '12px'
-          }}>
-            🌐 3D View ({Math.round(100 - leftPanelWidth)}%)
-          </span>
           <button
             onClick={() => onToggleFullscreen('3d')}
             style={{
@@ -183,6 +203,31 @@ const NodeLegend = ({
           </button>
         </div>
       </div>
+      
+      {/* Controls Disabled Message - Right Edge */}
+      {isRotating && (
+        <div style={{
+          position: 'absolute',
+          right: '16px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 10000
+        }}>
+          <span style={{
+            color: '#fbbf24',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)',
+            animation: 'pulse 2s infinite',
+            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            border: '1px solid rgba(251, 191, 36, 0.3)'
+          }}>
+            🔒 Controls Disabled
+          </span>
+        </div>
+      )}
     </div>
   );
 };

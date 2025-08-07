@@ -104,16 +104,16 @@ const Graph2D = ({
         nodeCanvasObject={renderNode}
         
         
-        // Link styling - more transparent and longer for text visibility
+        // Link styling - better visibility for particle background
         linkColor={() => GRAPH_CONSTANTS.COLORS.LINK_DEFAULT}
         linkWidth={link => Math.max(1, (link.weight || 0.5) * GRAPH_CONSTANTS.GRAPH_2D.LINK_WIDTH_MULTIPLIER)}
-        linkOpacity={0.4}
+        linkOpacity={0.6}
         
         // Animation particles
         linkDirectionalParticles={GRAPH_CONSTANTS.GRAPH_2D.PARTICLE_COUNT}
         linkDirectionalParticleWidth={GRAPH_CONSTANTS.GRAPH_2D.PARTICLE_WIDTH}
         linkDirectionalParticleSpeed={GRAPH_CONSTANTS.GRAPH_2D.PARTICLE_SPEED}
-        linkDirectionalParticleColor={GRAPH_CONSTANTS.COLORS.PARTICLE_COLOR}
+        linkDirectionalParticleColor={() => GRAPH_CONSTANTS.COLORS.PARTICLE_COLOR}
         
         // Interaction and zoom settings
         enableNodeDrag={true}

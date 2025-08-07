@@ -123,7 +123,7 @@ export default function Graph3D({ nodes = [], links = [], isRotating = true, set
         const labelSprite = new SpriteText(node.label || node.id);
         labelSprite.material.depthWrite = false;
         labelSprite.color = '#ffffff';
-        labelSprite.textHeight = 8;
+        labelSprite.textHeight = GRAPH_CONSTANTS.GRAPH_3D.TEXT_HEIGHT;
         labelSprite.position.y = size + 4; // closer to shape
         group.add(labelSprite);
         
@@ -133,7 +133,7 @@ export default function Graph3D({ nodes = [], links = [], isRotating = true, set
           const valueSprite = new SpriteText(displayValue);
           valueSprite.material.depthWrite = false;
           valueSprite.color = '#FFD700'; // Gold color like 2D
-          valueSprite.textHeight = 6; // smaller text
+          valueSprite.textHeight = GRAPH_CONSTANTS.GRAPH_3D.VALUE_TEXT_HEIGHT; // smaller text
           valueSprite.position.y = -(size + 4); // closer to shape
           group.add(valueSprite);
         }
@@ -141,6 +141,31 @@ export default function Graph3D({ nodes = [], links = [], isRotating = true, set
         return group;
       }}
       nodeThreeObjectExtend={true}     // like in demo
+      linkThreeObjectExtend={true}
+      linkThreeObject={link => {
+        // Fix object reference issue: handle both string IDs and object references
+        const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+        const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+        
+        // Create text sprite showing influenceType and weight (like 2D graph)
+        const influenceText = link.influenceType || 'Connection';
+        const weightText = link.weight ? `(${link.weight.toFixed(2)})` : '';
+        const linkText = `${influenceText} ${weightText}`;
+        
+        const sprite = new SpriteText(linkText);
+        sprite.color = 'lightgrey';
+        sprite.textHeight = GRAPH_CONSTANTS.GRAPH_3D.LINK_TEXT_HEIGHT;
+        sprite.material.depthWrite = false;
+        return sprite;
+      }}
+      linkPositionUpdate={(sprite, { start, end }) => {
+        const middlePos = Object.assign(...['x', 'y', 'z'].map(c => ({
+          [c]: start[c] + (end[c] - start[c]) / 2 // calc middle point
+        })));
+        
+        // Position sprite in middle of link
+        Object.assign(sprite.position, middlePos);
+      }}
       linkDirectionalParticles={GRAPH_CONSTANTS.GRAPH_3D.PARTICLE_COUNT}     // animated Partikel auf Links
       linkDirectionalParticleSpeed={GRAPH_CONSTANTS.GRAPH_3D.PARTICLE_SPEED}
       linkDirectionalParticleColor={GRAPH_CONSTANTS.COLORS.PARTICLE_COLOR}  // rote Partikel

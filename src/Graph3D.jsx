@@ -49,9 +49,13 @@ export default function Graph3D({ nodes = [], links = [], dimensions, isRotating
           }
         }, 10);
         
-        // Disable navigation controls when rotating
+        // Completely disable all user interactions during rotation
         if (fgRef.current.controls) {
-          fgRef.current.controls.enabled = false;
+          const controls = fgRef.current.controls();
+          controls.enabled = false;
+          controls.noZoom = true;
+          controls.noPan = true;
+          controls.noRotate = true;
         }
       } else {
         // Stop camera rotation but keep D3 simulation running
@@ -63,9 +67,13 @@ export default function Graph3D({ nodes = [], links = [], dimensions, isRotating
         // Stay at current camera position when stopping (better UX)
         // User can now manually navigate from wherever they stopped
         
-        // Enable user navigation controls when rotation is stopped
+        // Re-enable all user interactions when rotation is stopped
         if (fgRef.current.controls) {
-          fgRef.current.controls.enabled = true;
+          const controls = fgRef.current.controls();
+          controls.enabled = true;
+          controls.noZoom = false;
+          controls.noPan = false;
+          controls.noRotate = false;
         }
         
         // ✅ CRITICAL FIX: Keep D3 force simulation running!
@@ -153,7 +161,7 @@ export default function Graph3D({ nodes = [], links = [], dimensions, isRotating
         const labelSprite = new SpriteText(node.label || node.id);
         labelSprite.material.depthWrite = false;
         labelSprite.color = '#ffffff';
-        labelSprite.textHeight = 8;
+        labelSprite.textHeight = GRAPH_CONSTANTS.GRAPH_3D.TEXT_HEIGHT;
         labelSprite.position.y = size + 4; // closer to shape
         group.add(labelSprite);
         
@@ -163,7 +171,7 @@ export default function Graph3D({ nodes = [], links = [], dimensions, isRotating
           const valueSprite = new SpriteText(displayValue);
           valueSprite.material.depthWrite = false;
           valueSprite.color = '#FFD700'; // Gold color like 2D
-          valueSprite.textHeight = 6; // smaller text
+          valueSprite.textHeight = GRAPH_CONSTANTS.GRAPH_3D.VALUE_TEXT_HEIGHT; // smaller text
           valueSprite.position.y = -(size + 4); // closer to shape
           group.add(valueSprite);
         }
@@ -184,7 +192,7 @@ export default function Graph3D({ nodes = [], links = [], dimensions, isRotating
         
         const sprite = new SpriteText(linkText);
         sprite.color = 'lightgrey';
-        sprite.textHeight = 3;
+        sprite.textHeight = GRAPH_CONSTANTS.GRAPH_3D.LINK_TEXT_HEIGHT;
         sprite.material.depthWrite = false;
         return sprite;
       }}

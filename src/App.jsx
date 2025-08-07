@@ -199,21 +199,6 @@ function App() {
       backgroundColor: '#000',
       overflow: 'hidden'  // Prevent any scrolling
     }}>
-      {/* Logo overlay */}
-      <img 
-        src="/logo.png" 
-        alt="Logo" 
-        style={{
-          position: 'absolute',
-          top: '16px',
-          left: '16px',
-          height: '150px',
-          width: 'auto',
-          zIndex: 50,
-          opacity: 0.9,
-          filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3))'
-        }}
-      />
       
       {/* Left: 2D Graph */}
       <div style={{ 
