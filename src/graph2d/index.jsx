@@ -3,6 +3,8 @@ import ForceGraph2D from 'react-force-graph-2d';
 import { forceSimulation, forceManyBody, forceLink, forceCenter } from 'd3-force';
 import { getNodeDisplayValue } from '../utils/graphUtils.js';
 import { GRAPH_CONSTANTS } from '../constants/graphConstants.js';
+import LinkTextOverlay from '../components/LinkTextOverlay.jsx';
+import NodeTitleOverlay from '../components/NodeTitleOverlay.jsx';
 
 const Graph2D = ({ 
   nodes, 
@@ -66,62 +68,15 @@ const Graph2D = ({
     
     ctx.restore();
 
-    // Draw label above node
-    const label = node.label || node.id;
-    const fontSize = Math.max(10, GRAPH_CONSTANTS.GRAPH_2D.FONT_SIZE / globalScale);
-    ctx.font = `${fontSize}px Inter, sans-serif`;
-    ctx.fillStyle = GRAPH_CONSTANTS.COLORS.TEXT_PRIMARY;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText(label, node.x, node.y - radius - 2);
-    
-    // Draw value below node
-    const displayValue = getNodeDisplayValue(node);
-    if (displayValue) {
-      const valueSize = Math.max(8, GRAPH_CONSTANTS.GRAPH_2D.VALUE_FONT_SIZE / globalScale);
-      ctx.font = `bold ${valueSize}px Inter, sans-serif`;
-      ctx.fillStyle = GRAPH_CONSTANTS.COLORS.TEXT_VALUE;
-      ctx.textBaseline = 'top';
-      ctx.fillText(displayValue, node.x, node.y + radius + 2);
-    }
+    // Node text rendering removed - now handled by NodeTitleOverlay for better layering
   }, []);
 
-  // Render link text on canvas (similar to 3D approach)
-  const renderLink = useCallback((link, ctx, globalScale) => {
-    // Find source and target nodes
-    const source = nodes.find(n => n.id === (typeof link.source === 'object' ? link.source.id : link.source));
-    const target = nodes.find(n => n.id === (typeof link.target === 'object' ? link.target.id : link.target));
-    
-    if (!source || !target || !source.x || !source.y || !target.x || !target.y) return;
-    
-    // Calculate middle point of the link
-    const midX = (source.x + target.x) / 2;
-    const midY = (source.y + target.y) / 2;
-    
-    // Create link text (same format as 3D)
-    const influenceText = link.influenceType || 'Connection';
-    const weightText = link.weight ? `(${link.weight.toFixed(2)})` : '';
-    const linkText = `${influenceText} ${weightText}`;
-    
-    // Style the text
-    const fontSize = Math.max(8, 12 / globalScale);  // Scale with zoom
-    ctx.font = `${fontSize}px Inter, sans-serif`;
-    ctx.fillStyle = '#cccccc';  // Light gray for visibility
-    ctx.strokeStyle = '#000000';  // Black outline for readability
-    ctx.lineWidth = 0.5;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    
-    // Draw text with outline for better readability
-    ctx.strokeText(linkText, midX, midY);
-    ctx.fillText(linkText, midX, midY);
-  }, [nodes, links]);
 
   // Configure 2D forces specifically
   useEffect(() => {
     if (fgRef.current && nodes.length > 0) {
       fgRef.current.d3Force('charge', forceManyBody().strength(-120));
-      fgRef.current.d3Force('link', forceLink().distance(80));
+      fgRef.current.d3Force('link', forceLink().distance(120));  // Longer links for text space
       fgRef.current.d3Force('center', forceCenter(0, 0));
     }
   }, [nodes]);
@@ -136,7 +91,7 @@ const Graph2D = ({
   };
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full" style={{ position: 'relative' }}>
       <ForceGraph2D
         ref={fgRef}
         {...graphProps}
@@ -148,14 +103,11 @@ const Graph2D = ({
         // Node rendering (custom only)
         nodeCanvasObject={renderNode}
         
-        // Link text rendering (permanent display like 3D)
-        linkCanvasObject={renderLink}
-        linkCanvasObjectMode="after"  // Draw text after links for better layering
         
-        // Link styling
+        // Link styling - more transparent and longer for text visibility
         linkColor={() => GRAPH_CONSTANTS.COLORS.LINK_DEFAULT}
         linkWidth={link => Math.max(1, (link.weight || 0.5) * GRAPH_CONSTANTS.GRAPH_2D.LINK_WIDTH_MULTIPLIER)}
-        linkOpacity={0.8}
+        linkOpacity={0.4}
         
         // Animation particles
         linkDirectionalParticles={GRAPH_CONSTANTS.GRAPH_2D.PARTICLE_COUNT}
@@ -163,10 +115,24 @@ const Graph2D = ({
         linkDirectionalParticleSpeed={GRAPH_CONSTANTS.GRAPH_2D.PARTICLE_SPEED}
         linkDirectionalParticleColor={GRAPH_CONSTANTS.COLORS.PARTICLE_COLOR}
         
-        // Interaction
+        // Interaction and zoom settings
         enableNodeDrag={true}
         enableZoomInteraction={true}
         enablePanInteraction={true}
+        zoom={0.8} // Default zoom to 80% (20% zoomed out)
+      />
+      
+      {/* HTML overlays for proper text layering */}
+      <LinkTextOverlay
+        nodes={nodes}
+        links={links}
+        fgRef={fgRef}
+        dimensions={dimensions}
+      />
+      <NodeTitleOverlay
+        nodes={nodes}
+        fgRef={fgRef}
+        dimensions={dimensions}
       />
     </div>
   );

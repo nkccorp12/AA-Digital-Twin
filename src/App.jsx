@@ -9,6 +9,7 @@ function App() {
   const [isRotating, setIsRotating] = useState(true);
   const [leftPanelWidth, setLeftPanelWidth] = useState(50); // percentage
   const [isDragging, setIsDragging] = useState(false);
+  const [fullscreenMode, setFullscreenMode] = useState(null); // null | '2d' | '3d'
   const rafIdRef = useRef(null);
   const lastUpdateTimeRef = useRef(0);
 
@@ -114,6 +115,19 @@ function App() {
   const handle3DNodeClick = useCallback((node) => {
     console.log('3D clicked:', node);
   }, []);
+
+  // Fullscreen toggle function
+  const toggleFullscreen = useCallback((mode) => {
+    if (fullscreenMode === mode) {
+      // Exit fullscreen - return to 50/50 split
+      setFullscreenMode(null);
+      setLeftPanelWidth(50);
+    } else {
+      // Enter fullscreen
+      setFullscreenMode(mode);
+      setLeftPanelWidth(mode === '2d' ? 100 : 0);
+    }
+  }, [fullscreenMode]);
 
   // Resizer drag handlers
   const handleMouseDown = useCallback((e) => {
@@ -224,39 +238,66 @@ function App() {
           fontSize: '12px',
           backgroundColor: 'rgba(0,0,0,0.8)',
           padding: '8px',
-          borderRadius: '4px'
+          borderRadius: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
         }}>
           📊 2D View ({Math.round(leftPanelWidth)}%)
+          <button
+            onClick={() => toggleFullscreen('2d')}
+            style={{
+              backgroundColor: fullscreenMode === '2d' ? '#ef4444' : '#374151',
+              color: 'white',
+              border: 'none',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              cursor: 'pointer',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.opacity = '0.8';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.opacity = '1';
+            }}
+            title={fullscreenMode === '2d' ? 'Exit Fullscreen' : 'Fullscreen 2D'}
+          >
+            {fullscreenMode === '2d' ? '⇱' : '⛶'}
+          </button>
         </div>
       </div>
       
-      {/* Resizer Handle */}
-      <div
-        style={{
-          width: '6px',
-          height: '100%',
-          backgroundColor: isDragging ? '#555' : '#333',
-          cursor: 'col-resize',
-          position: 'relative',
-          transition: isDragging ? 'none' : 'background-color 0.2s ease',
-          zIndex: 10,
-          willChange: 'background-color', // Hardware acceleration for color changes
-          touchAction: 'none' // Prevent touch scrolling on mobile
-        }}
-        onMouseDown={handleMouseDown}
-      >
-        {/* Visual grip dots */}
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '4px',
-          height: '24px',
-          background: 'repeating-linear-gradient(to bottom, transparent 0px, transparent 1px, rgba(255,255,255,0.3) 1px, rgba(255,255,255,0.3) 2px)',
-          pointerEvents: 'none'
-        }} />
-      </div>
+      {/* Resizer Handle - Hidden in fullscreen mode */}
+      {fullscreenMode === null && (
+        <div
+          style={{
+            width: '6px',
+            height: '100%',
+            backgroundColor: isDragging ? '#555' : '#333',
+            cursor: 'col-resize',
+            position: 'relative',
+            transition: isDragging ? 'none' : 'background-color 0.2s ease',
+            zIndex: 10,
+            willChange: 'background-color', // Hardware acceleration for color changes
+            touchAction: 'none' // Prevent touch scrolling on mobile
+          }}
+          onMouseDown={handleMouseDown}
+        >
+          {/* Visual grip dots */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '4px',
+            height: '24px',
+            background: 'repeating-linear-gradient(to bottom, transparent 0px, transparent 1px, rgba(255,255,255,0.3) 1px, rgba(255,255,255,0.3) 2px)',
+            pointerEvents: 'none'
+          }} />
+        </div>
+      )}
       
       {/* Right: 3D Graph */}
       <div style={{ 
@@ -290,6 +331,28 @@ function App() {
           gap: '8px'
         }}>
           🌐 3D View ({Math.round(100 - leftPanelWidth)}%)
+          <button
+            onClick={() => toggleFullscreen('3d')}
+            style={{
+              backgroundColor: fullscreenMode === '3d' ? '#ef4444' : '#374151',
+              color: 'white',
+              border: 'none',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              cursor: 'pointer',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.opacity = '0.8';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.opacity = '1';
+            }}
+            title={fullscreenMode === '3d' ? 'Exit Fullscreen' : 'Fullscreen 3D'}
+          >
+            {fullscreenMode === '3d' ? '⇱' : '⛶'}
+          </button>
           <button
             onClick={() => setIsRotating(!isRotating)}
             style={{
