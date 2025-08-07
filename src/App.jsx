@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import Graph2D from './components/Graph2D';
-import Graph3D from './Graph3D';
+import Graph2D from './graph2d';
+import Graph3D from './graph3d';
 import { prepareNodes } from './utils/graphUtils.js';
 
 function App() {
   const [nodes, setNodes] = useState([]);
   const [links, setLinks] = useState([]);
+  const [isRotating, setIsRotating] = useState(true);
 
   // Load the mock data from baseline.json
   useEffect(() => {
@@ -120,6 +121,8 @@ function App() {
           links={links}
           dimensions={dimensions}
           onNodeClick={(node) => console.log('3D clicked:', node)}
+          isRotating={isRotating}
+          setIsRotating={setIsRotating}
         />
         <div style={{
           position: 'absolute',
@@ -129,9 +132,33 @@ function App() {
           fontSize: '12px',
           backgroundColor: 'rgba(0,0,0,0.8)',
           padding: '8px',
-          borderRadius: '4px'
+          borderRadius: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
         }}>
           🌐 3D View
+          <button
+            onClick={() => setIsRotating(!isRotating)}
+            style={{
+              backgroundColor: isRotating ? '#ef4444' : '#10b981',
+              color: 'white',
+              border: 'none',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '10px',
+              cursor: 'pointer',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.opacity = '0.8';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.opacity = '1';
+            }}
+          >
+            {isRotating ? 'Stop Rotation' : 'Start Rotation'}
+          </button>
         </div>
       </div>
     </div>

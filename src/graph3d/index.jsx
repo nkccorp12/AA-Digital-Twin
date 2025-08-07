@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import SpriteText from 'three-spritetext';
 import * as THREE from 'three';
-import { getNodeDisplayValue } from './utils/graphUtils.js';
-import { setInitial3DPositions } from './utils/forceSimulation.js';
-import { GRAPH_CONSTANTS } from './constants/graphConstants.js';
+import { forceManyBody, forceLink, forceCenter } from 'd3-force-3d';
+import { getNodeDisplayValue } from '../utils/graphUtils.js';
+import { setInitial3DPositions } from '../utils/forceSimulation.js';
+import { GRAPH_CONSTANTS } from '../constants/graphConstants.js';
 
 export default function Graph3D({ nodes = [], links = [], isRotating = true, setIsRotating }) {
   const fgRef = useRef();
@@ -19,7 +20,10 @@ export default function Graph3D({ nodes = [], links = [], isRotating = true, set
   // Configure charge force like in demo + camera orbit
   useEffect(() => {
     if (fgRef.current && nodes.length > 0) {
-      fgRef.current.d3Force('charge').strength(-120);
+      // Use 3D-specific forces
+      fgRef.current.d3Force('charge', forceManyBody().strength(-120));
+      fgRef.current.d3Force('link', forceLink().distance(30));
+      fgRef.current.d3Force('center', forceCenter(0, 0, 0));
       
       // Set initial 3D positions for proper Z-layering
       setInitial3DPositions(nodes);
@@ -137,28 +141,6 @@ export default function Graph3D({ nodes = [], links = [], isRotating = true, set
         return group;
       }}
       nodeThreeObjectExtend={true}     // like in demo
-      linkThreeObjectExtend={true}
-      linkThreeObject={link => {
-        // Create text sprite on links showing connection
-        const sourceNode = nodes.find(n => n.id === link.source);
-        const targetNode = nodes.find(n => n.id === link.target);
-        const sourceLabel = sourceNode?.label || link.source;
-        const targetLabel = targetNode?.label || link.target;
-        
-        const sprite = new SpriteText(`${sourceLabel} → ${targetLabel}`);
-        sprite.color = 'lightgrey';
-        sprite.textHeight = 1.5;
-        sprite.material.depthWrite = false;
-        return sprite;
-      }}
-      linkPositionUpdate={(sprite, { start, end }) => {
-        const middlePos = Object.assign(...['x', 'y', 'z'].map(c => ({
-          [c]: start[c] + (end[c] - start[c]) / 2 // calc middle point
-        })));
-        
-        // Position sprite in middle of link
-        Object.assign(sprite.position, middlePos);
-      }}
       linkDirectionalParticles={GRAPH_CONSTANTS.GRAPH_3D.PARTICLE_COUNT}     // animated Partikel auf Links
       linkDirectionalParticleSpeed={GRAPH_CONSTANTS.GRAPH_3D.PARTICLE_SPEED}
       linkDirectionalParticleColor={GRAPH_CONSTANTS.COLORS.PARTICLE_COLOR}  // rote Partikel

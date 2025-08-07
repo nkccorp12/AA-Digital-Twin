@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
-import { configure2DForces } from '../utils/forceSimulation.js';
+import { forceSimulation, forceManyBody, forceLink, forceCenter } from 'd3-force';
 import { getNodeDisplayValue } from '../utils/graphUtils.js';
 import { GRAPH_CONSTANTS } from '../constants/graphConstants.js';
 
@@ -64,11 +64,8 @@ const Graph2D = ({
     
     ctx.restore();
 
-    // Draw label above node - make a bit longer/more descriptive
-    const baseLabel = node.label || node.id;
-    const typePrefix = node.type ? `[${node.type.charAt(0).toUpperCase()}] ` : '';
-    const label = `${typePrefix}${baseLabel}`;
-    
+    // Draw label above node
+    const label = node.label || node.id;
     const fontSize = Math.max(10, GRAPH_CONSTANTS.GRAPH_2D.FONT_SIZE / globalScale);
     ctx.font = `${fontSize}px Inter, sans-serif`;
     ctx.fillStyle = GRAPH_CONSTANTS.COLORS.TEXT_PRIMARY;
@@ -87,12 +84,14 @@ const Graph2D = ({
     }
   }, []);
 
-  // Configure forces when component mounts
+  // Configure 2D forces specifically
   useEffect(() => {
-    if (fgRef.current) {
-      configure2DForces(fgRef.current);
+    if (fgRef.current && nodes.length > 0) {
+      fgRef.current.d3Force('charge', forceManyBody().strength(-120));
+      fgRef.current.d3Force('link', forceLink().distance(80));
+      fgRef.current.d3Force('center', forceCenter(0, 0));
     }
-  }, []);
+  }, [nodes]);
 
   // Base props for 2D graph (no conflicting auto-rendering props)
   const graphProps = {

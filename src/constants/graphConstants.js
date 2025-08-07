@@ -11,6 +11,7 @@ export const GRAPH_CONSTANTS = {
   COLORS: {
     BACKGROUND: '#000000',
     LINK_DEFAULT: 'rgba(255,255,255,0.8)',
+    PARTICLE_COLOR: '#FF0000', // Red particles
     TEXT_PRIMARY: '#ffffff',
     TEXT_VALUE: '#FFD700', // Gold for values
     NODE_FALLBACK: '#6B7280'
