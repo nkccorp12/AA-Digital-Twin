@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import Graph2D from './graph2d';
 import Graph3D from './graph3d';
+import NodeLegend from './components/NodeLegend';
 import { prepareNodes } from './utils/graphUtils.js';
 
 function App() {
@@ -230,43 +231,6 @@ function App() {
           dimensions={canvasDimensions}
           onNodeClick={handle2DNodeClick}
         />
-        <div style={{
-          position: 'absolute',
-          bottom: '20px',
-          left: '20px',
-          color: 'white',
-          fontSize: '12px',
-          backgroundColor: 'rgba(0,0,0,0.8)',
-          padding: '8px',
-          borderRadius: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          📊 2D View ({Math.round(leftPanelWidth)}%)
-          <button
-            onClick={() => toggleFullscreen('2d')}
-            style={{
-              backgroundColor: fullscreenMode === '2d' ? '#ef4444' : '#374151',
-              color: 'white',
-              border: 'none',
-              padding: '4px 8px',
-              borderRadius: '4px',
-              fontSize: '12px',
-              cursor: 'pointer',
-              transition: 'background-color 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.opacity = '0.8';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.opacity = '1';
-            }}
-            title={fullscreenMode === '2d' ? 'Exit Fullscreen' : 'Fullscreen 2D'}
-          >
-            {fullscreenMode === '2d' ? '⇱' : '⛶'}
-          </button>
-        </div>
       </div>
       
       {/* Resizer Handle - Hidden in fullscreen mode */}
@@ -317,65 +281,16 @@ function App() {
           isRotating={isRotating}
           setIsRotating={setIsRotating}
         />
-        <div style={{
-          position: 'absolute',
-          bottom: '20px',
-          right: '20px',
-          color: 'white',
-          fontSize: '12px',
-          backgroundColor: 'rgba(0,0,0,0.8)',
-          padding: '8px',
-          borderRadius: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          🌐 3D View ({Math.round(100 - leftPanelWidth)}%)
-          <button
-            onClick={() => toggleFullscreen('3d')}
-            style={{
-              backgroundColor: fullscreenMode === '3d' ? '#ef4444' : '#374151',
-              color: 'white',
-              border: 'none',
-              padding: '4px 8px',
-              borderRadius: '4px',
-              fontSize: '12px',
-              cursor: 'pointer',
-              transition: 'background-color 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.opacity = '0.8';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.opacity = '1';
-            }}
-            title={fullscreenMode === '3d' ? 'Exit Fullscreen' : 'Fullscreen 3D'}
-          >
-            {fullscreenMode === '3d' ? '⇱' : '⛶'}
-          </button>
-          <button
-            onClick={() => setIsRotating(!isRotating)}
-            style={{
-              backgroundColor: isRotating ? '#ef4444' : '#10b981',
-              color: 'white',
-              border: 'none',
-              padding: '4px 8px',
-              borderRadius: '4px',
-              fontSize: '10px',
-              cursor: 'pointer',
-              transition: 'background-color 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.opacity = '0.8';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.opacity = '1';
-            }}
-          >
-            {isRotating ? 'Stop Rotation' : 'Start Rotation'}
-          </button>
-        </div>
       </div>
+      
+      {/* Node Legend Footer Bar */}
+      <NodeLegend 
+        leftPanelWidth={leftPanelWidth}
+        fullscreenMode={fullscreenMode}
+        isRotating={isRotating}
+        onToggleFullscreen={toggleFullscreen}
+        onToggleRotation={() => setIsRotating(!isRotating)}
+      />
     </div>
   );
 }

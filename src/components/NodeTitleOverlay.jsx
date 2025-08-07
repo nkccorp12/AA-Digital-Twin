@@ -49,13 +49,13 @@ const NodeTitleOverlay = ({ nodes, fgRef, dimensions }) => {
         // Position label above node
         if (labelElement) {
           labelElement.style.left = `${screenCoords.x}px`;
-          labelElement.style.top = `${screenCoords.y - element.size - 15}px`; // Above node
+          labelElement.style.top = `${screenCoords.y - element.size - 20}px`; // More space above node
         }
 
         // Position value below node
         if (valueElement && element.displayValue) {
           valueElement.style.left = `${screenCoords.x}px`;
-          valueElement.style.top = `${screenCoords.y + element.size + 5}px`; // Below node
+          valueElement.style.top = `${screenCoords.y + element.size + 15}px`; // More space below node
         }
       }
     });
@@ -98,9 +98,9 @@ const NodeTitleOverlay = ({ nodes, fgRef, dimensions }) => {
               position: 'absolute',
               transform: 'translate(-50%, -50%)', // Center text on position
               color: GRAPH_CONSTANTS.COLORS.TEXT_PRIMARY,
-              fontSize: '12px',
+              fontSize: '16px', // Double size for better visibility
               fontFamily: 'Inter, sans-serif',
-              fontWeight: 'normal',
+              fontWeight: 'bold',
               textAlign: 'center',
               whiteSpace: 'nowrap',
               textShadow: '0 1px 3px rgba(0, 0, 0, 0.8)', // Strong shadow for visibility
@@ -119,12 +119,13 @@ const NodeTitleOverlay = ({ nodes, fgRef, dimensions }) => {
                 position: 'absolute',
                 transform: 'translate(-50%, -50%)', // Center text on position
                 color: GRAPH_CONSTANTS.COLORS.TEXT_VALUE,
-                fontSize: '10px',
+                fontSize: '10px', // Bigger for better readability
                 fontFamily: 'Inter, sans-serif',
                 fontWeight: 'bold',
                 textAlign: 'center',
                 whiteSpace: 'nowrap',
                 textShadow: '0 1px 3px rgba(0, 0, 0, 0.8)', // Strong shadow for visibility
+                // No background - clean look
                 userSelect: 'none',
                 pointerEvents: 'none'
               }}
