@@ -12,9 +12,6 @@ const Graph2D = ({
 }) => {
   const fgRef = useRef();
   
-  // Debug: Track when Graph2D re-renders and why
-  const renderStart = performance.now();
-  console.log(`📊 2D: Re-rendering (width: ${dimensions.width2D?.toFixed(0)}, dragging: ${dimensions.isDragging})`);
   
 
   // Draw shape based on node type - custom implementation
@@ -129,11 +126,6 @@ const Graph2D = ({
     }
   }, [nodes]);
 
-  // Debug: Log render completion time
-  useEffect(() => {
-    const renderTime = performance.now() - renderStart;
-    console.log(`📊 2D: Render completed in ${renderTime.toFixed(2)}ms`);
-  });
 
   // Base props for 2D graph (no conflicting auto-rendering props)
   const graphProps = {

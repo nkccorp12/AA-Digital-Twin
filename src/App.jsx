@@ -11,8 +11,6 @@ function App() {
   const [isDragging, setIsDragging] = useState(false);
   const rafIdRef = useRef(null);
   const lastUpdateTimeRef = useRef(0);
-  const mouseMoveCountRef = useRef(0);
-  const lastLogTimeRef = useRef(0);
 
   // Load the mock data from baseline.json
   useEffect(() => {
@@ -99,8 +97,6 @@ function App() {
     const new2DWidth = (window.innerWidth * leftPanelWidth) / 100;
     const new3DWidth = (window.innerWidth * (100 - leftPanelWidth)) / 100;
     
-    console.log(`⚡ LAYOUT: Updating canvas dimensions synchronously`);
-    console.log(`📐 DIMS: 2D canvas width: ${new2DWidth.toFixed(0)}px, 3D canvas width: ${new3DWidth.toFixed(0)}px`);
     
     setCanvasDimensions({
       width2D: new2DWidth,
@@ -122,24 +118,11 @@ function App() {
   // Resizer drag handlers
   const handleMouseDown = useCallback((e) => {
     e.preventDefault();
-    console.log('🚀 Drag started');
-    mouseMoveCountRef.current = 0;
-    lastLogTimeRef.current = Date.now();
     setIsDragging(true);
   }, []);
 
   const handleMouseMove = useCallback((e) => {
     if (!isDragging) return;
-    
-    mouseMoveCountRef.current++;
-    const now = Date.now();
-    
-    // Log mouse event frequency every 500ms
-    if (now - lastLogTimeRef.current > 500) {
-      console.log(`🎯 Mouse events: ${mouseMoveCountRef.current} in 500ms`);
-      mouseMoveCountRef.current = 0;
-      lastLogTimeRef.current = now;
-    }
     
     // Throttle updates using requestAnimationFrame
     if (rafIdRef.current) {
@@ -152,11 +135,8 @@ function App() {
       
       // Limit updates to ~30fps (33ms intervals)
       if (timeSinceLastUpdate < 33) {
-        console.log(`⏱️ RAF: Skipping update (${timeSinceLastUpdate}ms too soon)`);
         return;
       }
-      
-      console.log(`⚡ RAF: Executing resize update (${timeSinceLastUpdate}ms since last)`);
       
       const containerWidth = window.innerWidth;
       const newLeftWidth = (e.clientX / containerWidth) * 100;
@@ -164,20 +144,13 @@ function App() {
       // Constrain between 20% and 80%
       const constrainedWidth = Math.max(20, Math.min(80, newLeftWidth));
       
-      console.log(`🎨 CSS: Panel width changing to ${constrainedWidth.toFixed(1)}%`);
-      
-      const stateUpdateStart = performance.now();
       setLeftPanelWidth(constrainedWidth);
-      const stateUpdateTime = performance.now() - stateUpdateStart;
-      
-      console.log(`🔄 State update took: ${stateUpdateTime.toFixed(2)}ms`);
       
       lastUpdateTimeRef.current = rafTime;
     });
   }, [isDragging]);
 
   const handleMouseUp = useCallback(() => {
-    console.log('🏁 Drag ended');
     setIsDragging(false);
     // Cancel any pending animation frame
     if (rafIdRef.current) {

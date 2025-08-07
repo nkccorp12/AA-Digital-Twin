@@ -11,9 +11,6 @@ export default function Graph3D({ nodes = [], links = [], dimensions, isRotating
   const rotationIntervalRef = useRef();
   const angleRef = useRef(0); // Persist angle across start/stop
   
-  // Debug: Track when Graph3D re-renders and why
-  const renderStart = performance.now();
-  console.log(`🌐 3D: Component re-rendering (target width: ${dimensions?.width3D?.toFixed(0)}px, dragging: ${dimensions?.isDragging})`);
   
   // Use the passed mock data or empty arrays as fallback
   const data = {
@@ -86,11 +83,6 @@ export default function Graph3D({ nodes = [], links = [], dimensions, isRotating
     }
   }, [nodes, isRotating]);
 
-  // Debug: Log render completion time
-  useEffect(() => {
-    const renderTime = performance.now() - renderStart;
-    console.log(`🌐 3D: Render completed in ${renderTime.toFixed(2)}ms`);
-  });
 
   // Debug & Force: Check and fix Three.js renderer size immediately
   useEffect(() => {
@@ -102,19 +94,9 @@ export default function Graph3D({ nodes = [], links = [], dimensions, isRotating
       const widthDiff = Math.abs(actualSize.width - targetWidth);
       const match = widthDiff < 5 ? '✅' : '❌';
       
-      console.log(`🎬 THREE: Renderer actual size ${actualSize.width}x${actualSize.height} (target: ${targetWidth.toFixed(0)}px) ${match}`);
-      
       if (widthDiff >= 5) {
-        console.log(`⚠️  SIZE MISMATCH: Renderer (${actualSize.width}px) != Target (${targetWidth.toFixed(0)}px)`);
-        console.log(`🔧 FORCE: Manually resizing renderer to ${targetWidth.toFixed(0)}x${targetHeight}`);
-        
         // Force immediate renderer resize
         renderer.setSize(targetWidth, targetHeight);
-        
-        // Verify the fix worked
-        const newSize = renderer.getSize(new THREE.Vector2());
-        const fixed = Math.abs(newSize.width - targetWidth) < 5 ? '✅' : '❌';
-        console.log(`🎯 FIXED: Renderer now ${newSize.width}x${newSize.height} ${fixed}`);
       }
     }
   }, [dimensions?.width3D, dimensions?.height]);
