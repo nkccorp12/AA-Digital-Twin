@@ -11,6 +11,7 @@ function App() {
   const [leftPanelWidth, setLeftPanelWidth] = useState(50); // percentage
   const [isDragging, setIsDragging] = useState(false);
   const [fullscreenMode, setFullscreenMode] = useState(null); // null | '2d' | '3d'
+  const [showLinkTexts2D, setShowLinkTexts2D] = useState(true);
   const rafIdRef = useRef(null);
   const lastUpdateTimeRef = useRef(0);
 
@@ -130,6 +131,11 @@ function App() {
     }
   }, [fullscreenMode]);
 
+  // Toggle link texts in 2D view
+  const toggleLinkTexts2D = useCallback(() => {
+    setShowLinkTexts2D(prev => !prev);
+  }, []);
+
   // Resizer drag handlers
   const handleMouseDown = useCallback((e) => {
     e.preventDefault();
@@ -215,6 +221,7 @@ function App() {
           links={links2D}
           dimensions={canvasDimensions}
           onNodeClick={handle2DNodeClick}
+          showLinkTexts={showLinkTexts2D}
         />
       </div>
       
@@ -273,8 +280,10 @@ function App() {
         leftPanelWidth={leftPanelWidth}
         fullscreenMode={fullscreenMode}
         isRotating={isRotating}
+        showLinkTexts2D={showLinkTexts2D}
         onToggleFullscreen={toggleFullscreen}
         onToggleRotation={() => setIsRotating(!isRotating)}
+        onToggleLinkTexts2D={toggleLinkTexts2D}
       />
     </div>
   );

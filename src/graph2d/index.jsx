@@ -10,7 +10,8 @@ const Graph2D = ({
   nodes, 
   links, 
   onNodeClick, 
-  dimensions 
+  dimensions,
+  showLinkTexts = true
 }) => {
   const fgRef = useRef();
   
@@ -75,8 +76,8 @@ const Graph2D = ({
   // Configure 2D forces specifically
   useEffect(() => {
     if (fgRef.current && nodes.length > 0) {
-      fgRef.current.d3Force('charge', forceManyBody().strength(-120));
-      fgRef.current.d3Force('link', forceLink().distance(120));  // Longer links for text space
+      fgRef.current.d3Force('charge', forceManyBody().strength(-4720));
+      fgRef.current.d3Force('link', forceLink().distance(160));  // Longer links for text space
       fgRef.current.d3Force('center', forceCenter(0, 0));
     }
   }, [nodes]);
@@ -119,7 +120,7 @@ const Graph2D = ({
         enableNodeDrag={true}
         enableZoomInteraction={true}
         enablePanInteraction={true}
-        zoom={0.8} // Default zoom to 80% (20% zoomed out)
+        zoom={0.2} // Default zoom to 60% (40% zoomed out)
       />
       
       {/* HTML overlays for proper text layering */}
@@ -128,6 +129,7 @@ const Graph2D = ({
         links={links}
         fgRef={fgRef}
         dimensions={dimensions}
+        visible={showLinkTexts}
       />
       <NodeTitleOverlay
         nodes={nodes}

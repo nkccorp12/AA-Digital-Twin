@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
  * HTML Overlay for 2D link texts - analog to 3D linkThreeObject + linkPositionUpdate
  * Renders HTML elements positioned over the canvas like 3D SpriteText
  */
-const LinkTextOverlay = ({ nodes, links, fgRef, dimensions }) => {
+const LinkTextOverlay = ({ nodes, links, fgRef, dimensions, visible = true }) => {
   const overlayRef = useRef(null);
   const [linkElements, setLinkElements] = useState([]);
 
@@ -150,7 +150,7 @@ const LinkTextOverlay = ({ nodes, links, fgRef, dimensions }) => {
     };
   }, [linkElements, nodes]);
 
-  return (
+  return visible ? (
     <div 
       ref={overlayRef}
       style={{
@@ -189,7 +189,7 @@ const LinkTextOverlay = ({ nodes, links, fgRef, dimensions }) => {
         </div>
       ))}
     </div>
-  );
+  ) : null;
 };
 
 export default LinkTextOverlay;
