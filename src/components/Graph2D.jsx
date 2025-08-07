@@ -124,7 +124,10 @@ const Graph2D = ({
         linkDirectionalParticles={GRAPH_CONSTANTS.GRAPH_2D.PARTICLE_COUNT}
         linkDirectionalParticleWidth={GRAPH_CONSTANTS.GRAPH_2D.PARTICLE_WIDTH}
         linkDirectionalParticleSpeed={GRAPH_CONSTANTS.GRAPH_2D.PARTICLE_SPEED}
-        linkDirectionalParticleColor={GRAPH_CONSTANTS.COLORS.PARTICLE_COLOR}
+        linkDirectionalParticleColor={() => {
+          console.log('2D Particle Color:', GRAPH_CONSTANTS.COLORS.PARTICLE_COLOR);
+          return '#FF0000'; // Explicit red instead of constant
+        }}
         
         // Interaction
         enableNodeDrag={true}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Graph2D from './graph2d';
 import Graph3D from './graph3d';
 import { prepareNodes } from './utils/graphUtils.js';
@@ -53,7 +53,6 @@ function App() {
   const [nodes2D, nodes3D, links2D, links3D] = useMemo(() => {
     if (nodes.length === 0) return [[], [], [], []];
     
-    console.log('📊 App: Creating separate graph data...');
     
     // Prepare nodes with computed properties
     const enhancedNodes = prepareNodes(nodes, links);
@@ -76,23 +75,24 @@ function App() {
     }));
     const separateLinks3D = JSON.parse(JSON.stringify(separateLinks2D));
     
-    console.log('✅ App: Separate graph data created:', {
-      nodes2D: separateNodes2D.length,
-      nodes3D: separateNodes3D.length,
-      links2D: separateLinks2D.length,
-      links3D: separateLinks3D.length,
-      sampleNode2D: separateNodes2D[0],
-      sampleNode3D: separateNodes3D[0],
-      sampleLink2D: separateLinks2D[0]
-    });
     
     return [separateNodes2D, separateNodes3D, separateLinks2D, separateLinks3D];
   }, [nodes, links]);
 
-  const dimensions = {
+
+  const dimensions = useMemo(() => ({
     width: window.innerWidth / 2,
     height: window.innerHeight
-  };
+  }), []); // Empty dependency - only create once
+
+  // Stable callback functions to prevent unnecessary re-renders
+  const handle2DNodeClick = useCallback((node) => {
+    console.log('2D clicked:', node);
+  }, []);
+
+  const handle3DNodeClick = useCallback((node) => {
+    console.log('3D clicked:', node);
+  }, []);
 
   return (
     <div style={{ 
@@ -129,7 +129,7 @@ function App() {
           nodes={nodes2D}
           links={links2D}
           dimensions={dimensions}
-          onNodeClick={(node) => console.log('2D clicked:', node)}
+          onNodeClick={handle2DNodeClick}
         />
         <div style={{
           position: 'absolute',
@@ -155,7 +155,7 @@ function App() {
           nodes={nodes3D}
           links={links3D}
           dimensions={dimensions}
-          onNodeClick={(node) => console.log('3D clicked:', node)}
+          onNodeClick={handle3DNodeClick}
           isRotating={isRotating}
           setIsRotating={setIsRotating}
         />

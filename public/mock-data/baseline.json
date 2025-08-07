@@ -89,77 +89,92 @@
     {
       "source": "E1",
       "target": "B1",
-      "weight": 0.75
+      "weight": 0.75,
+      "influenceType": "regulatory_compliance"
     },
     {
       "source": "E2",
       "target": "B1",
-      "weight": 0.85
+      "weight": 0.85,
+      "influenceType": "regulatory_impact"
     },
     {
       "source": "E3",
       "target": "B2",
-      "weight": 0.68
+      "weight": 0.68,
+      "influenceType": "market_risk"
     },
     {
       "source": "E4",
       "target": "B2",
-      "weight": 0.52
+      "weight": 0.52,
+      "influenceType": "operational_risk"
     },
     {
       "source": "E5",
       "target": "B3",
-      "weight": 0.71
+      "weight": 0.71,
+      "influenceType": "data_governance"
     },
     {
       "source": "E6",
       "target": "B2",
-      "weight": 0.43
+      "weight": 0.43,
+      "influenceType": "environmental_risk"
     },
     {
       "source": "B1",
       "target": "S1",
-      "weight": 0.82
+      "weight": 0.82,
+      "influenceType": "compliance_flow"
     },
     {
       "source": "B1",
       "target": "S2",
-      "weight": 0.67
+      "weight": 0.67,
+      "influenceType": "regulatory_control"
     },
     {
       "source": "B2",
       "target": "S1",
-      "weight": 0.79
+      "weight": 0.79,
+      "influenceType": "risk_management"
     },
     {
       "source": "B2",
       "target": "S2",
-      "weight": 0.73
+      "weight": 0.73,
+      "influenceType": "risk_control"
     },
     {
       "source": "B3",
       "target": "S3",
-      "weight": 0.58
+      "weight": 0.58,
+      "influenceType": "data_flow"
     },
     {
       "source": "B3",
       "target": "S4",
-      "weight": 0.84
+      "weight": 0.84,
+      "influenceType": "data_governance"
     },
     {
       "source": "S1",
       "target": "S5",
-      "weight": 0.61
+      "weight": 0.61,
+      "influenceType": "transaction_flow"
     },
     {
       "source": "S2",
       "target": "S4",
-      "weight": 0.76
+      "weight": 0.76,
+      "influenceType": "data_feed"
     },
     {
       "source": "S3",
       "target": "S5",
-      "weight": 0.54
+      "weight": 0.54,
+      "influenceType": "payment_integration"
     }
   ]
 }

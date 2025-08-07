@@ -9,6 +9,7 @@ import { GRAPH_CONSTANTS } from './constants/graphConstants.js';
 export default function Graph3D({ nodes = [], links = [], isRotating = true, setIsRotating }) {
   const fgRef = useRef();
   const rotationIntervalRef = useRef();
+  const angleRef = useRef(0); // Persist angle across start/stop
   
   // Use the passed mock data or empty arrays as fallback
   const data = {
@@ -21,40 +22,54 @@ export default function Graph3D({ nodes = [], links = [], isRotating = true, set
     if (fgRef.current && nodes.length > 0) {
       fgRef.current.d3Force('charge').strength(-120);
       
-      // Set initial 3D positions for proper Z-layering
-      setInitial3DPositions(nodes);
+      // Initial 3D positions are now set in App.jsx before cloning
+      // No need to call setInitial3DPositions here anymore
       
-      // Set initial camera position like in example
-      const distance = 700;
-      fgRef.current.cameraPosition({ z: distance });
+      // Set initial camera position (start at rotation position to avoid jump)
+      const distance = 400; // Increased for better overview of the graph
+      fgRef.current.cameraPosition({ x: 0, z: distance });
     }
   }, [nodes]);
 
-  // Separate effect for rotation control
+  // Separate effect for rotation control (camera only, keep physics running)
   useEffect(() => {
     if (fgRef.current && nodes.length > 0) {
-      const distance = 700;
-      let angle = 0;
+      const distance = 400; // Same distance as initial camera
 
       if (isRotating) {
-        // Start camera orbit animation
+        // Start camera orbit animation from current angle (no jump)
         rotationIntervalRef.current = setInterval(() => {
           if (fgRef.current) {
             fgRef.current.cameraPosition({
-              x: distance * Math.sin(angle),
-              z: distance * Math.cos(angle)
+              x: distance * Math.sin(angleRef.current),
+              z: distance * Math.cos(angleRef.current)
             });
-            angle += Math.PI / 1000; // Much slower rotation
+            angleRef.current += Math.PI / 1000; // Much slower rotation
           }
         }, 10);
-        fgRef.current.resumeAnimation();
+        
+        // Disable navigation controls when rotating
+        if (fgRef.current.controls) {
+          fgRef.current.controls.enabled = false;
+        }
       } else {
-        // Stop rotation
+        // Stop camera rotation but keep D3 simulation running
         if (rotationIntervalRef.current) {
           clearInterval(rotationIntervalRef.current);
           rotationIntervalRef.current = null;
         }
-        fgRef.current.pauseAnimation();
+        
+        // Stay at current camera position when stopping (better UX)
+        // User can now manually navigate from wherever they stopped
+        
+        // Enable user navigation controls when rotation is stopped
+        if (fgRef.current.controls) {
+          fgRef.current.controls.enabled = true;
+        }
+        
+        // ✅ CRITICAL FIX: Keep D3 force simulation running!
+        // DON'T call pauseAnimation() - it stops physics and causes explosion
+        // The force simulation needs to keep running to maintain stable node positions
       }
 
       // Cleanup interval on effect change or component unmount
@@ -71,7 +86,7 @@ export default function Graph3D({ nodes = [], links = [], isRotating = true, set
     <ForceGraph3D
         ref={fgRef}
         graphData={data}
-        enableNavigationControls={!isRotating}
+        enableNavigationControls={true}
         nodeLabel={node => node.label || node.id}  // Tooltip shows label like 2D
         nodeVal={0}                      // Disable auto node size (causes standard spheres)
         nodeColor={() => 'transparent'}  // Make auto nodes invisible
@@ -139,15 +154,18 @@ export default function Graph3D({ nodes = [], links = [], isRotating = true, set
       nodeThreeObjectExtend={true}     // like in demo
       linkThreeObjectExtend={true}
       linkThreeObject={link => {
-        // Create text sprite on links showing connection
-        const sourceNode = nodes.find(n => n.id === link.source);
-        const targetNode = nodes.find(n => n.id === link.target);
-        const sourceLabel = sourceNode?.label || link.source;
-        const targetLabel = targetNode?.label || link.target;
+        // Fix object reference issue: handle both string IDs and object references
+        const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+        const targetId = typeof link.target === 'object' ? link.target.id : link.target;
         
-        const sprite = new SpriteText(`${sourceLabel} → ${targetLabel}`);
+        // Create text sprite showing influenceType and weight (like 2D graph)
+        const influenceText = link.influenceType || 'Connection';
+        const weightText = link.weight ? `(${link.weight.toFixed(2)})` : '';
+        const linkText = `${influenceText} ${weightText}`;
+        
+        const sprite = new SpriteText(linkText);
         sprite.color = 'lightgrey';
-        sprite.textHeight = 1.5;
+        sprite.textHeight = 3;
         sprite.material.depthWrite = false;
         return sprite;
       }}
@@ -161,7 +179,7 @@ export default function Graph3D({ nodes = [], links = [], isRotating = true, set
       }}
       linkDirectionalParticles={GRAPH_CONSTANTS.GRAPH_3D.PARTICLE_COUNT}     // animated Partikel auf Links
       linkDirectionalParticleSpeed={GRAPH_CONSTANTS.GRAPH_3D.PARTICLE_SPEED}
-      linkDirectionalParticleColor={GRAPH_CONSTANTS.COLORS.PARTICLE_COLOR}  // rote Partikel
+      linkDirectionalParticleColor={() => '#FF0000'}  // Explicit red function
       linkDirectionalParticleWidth={GRAPH_CONSTANTS.GRAPH_3D.PARTICLE_WIDTH}
       linkDistance={30}
       backgroundColor="#111111"        // dunkler Hintergrund

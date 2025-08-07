@@ -11,6 +11,7 @@ const Graph2D = ({
   dimensions 
 }) => {
   const fgRef = useRef();
+  
 
   // Draw shape based on node type - custom implementation
   const drawNodeShape = useCallback((ctx, nodeType, radius) => {
@@ -134,4 +135,5 @@ const Graph2D = ({
   );
 };
 
-export default Graph2D;
+// Wrap with React.memo to prevent unnecessary re-renders
+export default React.memo(Graph2D);
