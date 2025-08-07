@@ -23,7 +23,9 @@
       "Bash(git pull:*)",
       "Bash(git restore src/App.jsx)",
       "Bash(git restore:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }

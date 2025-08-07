@@ -120,14 +120,11 @@ const Graph2D = ({
         linkWidth={link => Math.max(1, (link.weight || 0.5) * GRAPH_CONSTANTS.GRAPH_2D.LINK_WIDTH_MULTIPLIER)}
         linkOpacity={0.8}
         
-        // Animation particles
-        linkDirectionalParticles={GRAPH_CONSTANTS.GRAPH_2D.PARTICLE_COUNT}
-        linkDirectionalParticleWidth={GRAPH_CONSTANTS.GRAPH_2D.PARTICLE_WIDTH}
-        linkDirectionalParticleSpeed={GRAPH_CONSTANTS.GRAPH_2D.PARTICLE_SPEED}
-        linkDirectionalParticleColor={() => {
-          console.log('2D Particle Color:', GRAPH_CONSTANTS.COLORS.PARTICLE_COLOR);
-          return '#FF0000'; // Explicit red instead of constant
-        }}
+        // Animation particles - SUPER VISIBLE
+        linkDirectionalParticles={4}  // Even more particles
+        linkDirectionalParticleWidth={10}  // Much bigger particles
+        linkDirectionalParticleSpeed={0.002}  // Much slower for visibility
+        linkDirectionalParticleColor={() => "#FF0000"}  // Function like 3D works
         
         // Interaction
         enableNodeDrag={true}

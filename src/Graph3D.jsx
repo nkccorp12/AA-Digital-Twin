@@ -6,10 +6,14 @@ import { getNodeDisplayValue } from './utils/graphUtils.js';
 import { setInitial3DPositions } from './utils/forceSimulation.js';
 import { GRAPH_CONSTANTS } from './constants/graphConstants.js';
 
-export default function Graph3D({ nodes = [], links = [], isRotating = true, setIsRotating }) {
+export default function Graph3D({ nodes = [], links = [], dimensions, isRotating = true, setIsRotating }) {
   const fgRef = useRef();
   const rotationIntervalRef = useRef();
   const angleRef = useRef(0); // Persist angle across start/stop
+  
+  // Debug: Track when Graph3D re-renders and why
+  const renderStart = performance.now();
+  console.log(`🌐 3D: Component re-rendering (target width: ${dimensions?.width3D?.toFixed(0)}px, dragging: ${dimensions?.isDragging})`);
   
   // Use the passed mock data or empty arrays as fallback
   const data = {
@@ -81,6 +85,39 @@ export default function Graph3D({ nodes = [], links = [], isRotating = true, set
       };
     }
   }, [nodes, isRotating]);
+
+  // Debug: Log render completion time
+  useEffect(() => {
+    const renderTime = performance.now() - renderStart;
+    console.log(`🌐 3D: Render completed in ${renderTime.toFixed(2)}ms`);
+  });
+
+  // Debug & Force: Check and fix Three.js renderer size immediately
+  useEffect(() => {
+    if (fgRef.current && fgRef.current.renderer && dimensions?.width3D && dimensions?.height) {
+      const renderer = fgRef.current.renderer();
+      const actualSize = renderer.getSize(new THREE.Vector2());
+      const targetWidth = dimensions.width3D;
+      const targetHeight = dimensions.height;
+      const widthDiff = Math.abs(actualSize.width - targetWidth);
+      const match = widthDiff < 5 ? '✅' : '❌';
+      
+      console.log(`🎬 THREE: Renderer actual size ${actualSize.width}x${actualSize.height} (target: ${targetWidth.toFixed(0)}px) ${match}`);
+      
+      if (widthDiff >= 5) {
+        console.log(`⚠️  SIZE MISMATCH: Renderer (${actualSize.width}px) != Target (${targetWidth.toFixed(0)}px)`);
+        console.log(`🔧 FORCE: Manually resizing renderer to ${targetWidth.toFixed(0)}x${targetHeight}`);
+        
+        // Force immediate renderer resize
+        renderer.setSize(targetWidth, targetHeight);
+        
+        // Verify the fix worked
+        const newSize = renderer.getSize(new THREE.Vector2());
+        const fixed = Math.abs(newSize.width - targetWidth) < 5 ? '✅' : '❌';
+        console.log(`🎯 FIXED: Renderer now ${newSize.width}x${newSize.height} ${fixed}`);
+      }
+    }
+  }, [dimensions?.width3D, dimensions?.height]);
 
   return (
     <ForceGraph3D
@@ -179,12 +216,12 @@ export default function Graph3D({ nodes = [], links = [], isRotating = true, set
       }}
       linkDirectionalParticles={GRAPH_CONSTANTS.GRAPH_3D.PARTICLE_COUNT}     // animated Partikel auf Links
       linkDirectionalParticleSpeed={GRAPH_CONSTANTS.GRAPH_3D.PARTICLE_SPEED}
-      linkDirectionalParticleColor={() => '#FF0000'}  // Explicit red function
+      linkDirectionalParticleColor={() => '#FF0000'}  // Explicit red function (works for 3D)
       linkDirectionalParticleWidth={GRAPH_CONSTANTS.GRAPH_3D.PARTICLE_WIDTH}
       linkDistance={30}
       backgroundColor="#111111"        // dunkler Hintergrund
-      width={window.innerWidth / 2}  // Half width for split screen
-      height={window.innerHeight}
+      width={dimensions.width3D}  // Dynamic width based on panel split
+      height={dimensions.height}
     />
   );
 }

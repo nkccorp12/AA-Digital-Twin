@@ -12,6 +12,10 @@ const Graph2D = ({
 }) => {
   const fgRef = useRef();
   
+  // Debug: Track when Graph2D re-renders and why
+  const renderStart = performance.now();
+  console.log(`📊 2D: Re-rendering (width: ${dimensions.width2D?.toFixed(0)}, dragging: ${dimensions.isDragging})`);
+  
 
   // Draw shape based on node type - custom implementation
   const drawNodeShape = useCallback((ctx, nodeType, radius) => {
@@ -85,6 +89,37 @@ const Graph2D = ({
     }
   }, []);
 
+  // Render link text on canvas (similar to 3D approach)
+  const renderLink = useCallback((link, ctx, globalScale) => {
+    // Find source and target nodes
+    const source = nodes.find(n => n.id === (typeof link.source === 'object' ? link.source.id : link.source));
+    const target = nodes.find(n => n.id === (typeof link.target === 'object' ? link.target.id : link.target));
+    
+    if (!source || !target || !source.x || !source.y || !target.x || !target.y) return;
+    
+    // Calculate middle point of the link
+    const midX = (source.x + target.x) / 2;
+    const midY = (source.y + target.y) / 2;
+    
+    // Create link text (same format as 3D)
+    const influenceText = link.influenceType || 'Connection';
+    const weightText = link.weight ? `(${link.weight.toFixed(2)})` : '';
+    const linkText = `${influenceText} ${weightText}`;
+    
+    // Style the text
+    const fontSize = Math.max(8, 12 / globalScale);  // Scale with zoom
+    ctx.font = `${fontSize}px Inter, sans-serif`;
+    ctx.fillStyle = '#cccccc';  // Light gray for visibility
+    ctx.strokeStyle = '#000000';  // Black outline for readability
+    ctx.lineWidth = 0.5;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Draw text with outline for better readability
+    ctx.strokeText(linkText, midX, midY);
+    ctx.fillText(linkText, midX, midY);
+  }, [nodes, links]);
+
   // Configure 2D forces specifically
   useEffect(() => {
     if (fgRef.current && nodes.length > 0) {
@@ -93,6 +128,12 @@ const Graph2D = ({
       fgRef.current.d3Force('center', forceCenter(0, 0));
     }
   }, [nodes]);
+
+  // Debug: Log render completion time
+  useEffect(() => {
+    const renderTime = performance.now() - renderStart;
+    console.log(`📊 2D: Render completed in ${renderTime.toFixed(2)}ms`);
+  });
 
   // Base props for 2D graph (no conflicting auto-rendering props)
   const graphProps = {
@@ -107,13 +148,17 @@ const Graph2D = ({
       <ForceGraph2D
         ref={fgRef}
         {...graphProps}
-        width={dimensions.width}
+        width={dimensions.width2D}
         height={dimensions.height}
         backgroundColor={GRAPH_CONSTANTS.COLORS.BACKGROUND}
         warmupTicks={50}
         
         // Node rendering (custom only)
         nodeCanvasObject={renderNode}
+        
+        // Link text rendering (permanent display like 3D)
+        linkCanvasObject={renderLink}
+        linkCanvasObjectMode="after"  // Draw text after links for better layering
         
         // Link styling
         linkColor={() => GRAPH_CONSTANTS.COLORS.LINK_DEFAULT}

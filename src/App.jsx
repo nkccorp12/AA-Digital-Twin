@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import Graph2D from './graph2d';
 import Graph3D from './graph3d';
 import { prepareNodes } from './utils/graphUtils.js';
@@ -7,6 +7,12 @@ function App() {
   const [nodes, setNodes] = useState([]);
   const [links, setLinks] = useState([]);
   const [isRotating, setIsRotating] = useState(true);
+  const [leftPanelWidth, setLeftPanelWidth] = useState(50); // percentage
+  const [isDragging, setIsDragging] = useState(false);
+  const rafIdRef = useRef(null);
+  const lastUpdateTimeRef = useRef(0);
+  const mouseMoveCountRef = useRef(0);
+  const lastLogTimeRef = useRef(0);
 
   // Load the mock data from baseline.json
   useEffect(() => {
@@ -80,10 +86,29 @@ function App() {
   }, [nodes, links]);
 
 
-  const dimensions = useMemo(() => ({
-    width: window.innerWidth / 2,
-    height: window.innerHeight
-  }), []); // Empty dependency - only create once
+  // Force immediate dimension updates using useLayoutEffect for canvas sync
+  const [canvasDimensions, setCanvasDimensions] = useState({
+    width2D: (window.innerWidth * leftPanelWidth) / 100,
+    width3D: (window.innerWidth * (100 - leftPanelWidth)) / 100,
+    height: window.innerHeight,
+    isDragging: isDragging
+  });
+  
+  // Synchronous dimension updates BEFORE browser paint to prevent canvas lag
+  useLayoutEffect(() => {
+    const new2DWidth = (window.innerWidth * leftPanelWidth) / 100;
+    const new3DWidth = (window.innerWidth * (100 - leftPanelWidth)) / 100;
+    
+    console.log(`⚡ LAYOUT: Updating canvas dimensions synchronously`);
+    console.log(`📐 DIMS: 2D canvas width: ${new2DWidth.toFixed(0)}px, 3D canvas width: ${new3DWidth.toFixed(0)}px`);
+    
+    setCanvasDimensions({
+      width2D: new2DWidth,
+      width3D: new3DWidth,
+      height: window.innerHeight,
+      isDragging: isDragging
+    });
+  }, [leftPanelWidth, isDragging]);
 
   // Stable callback functions to prevent unnecessary re-renders
   const handle2DNodeClick = useCallback((node) => {
@@ -93,6 +118,90 @@ function App() {
   const handle3DNodeClick = useCallback((node) => {
     console.log('3D clicked:', node);
   }, []);
+
+  // Resizer drag handlers
+  const handleMouseDown = useCallback((e) => {
+    e.preventDefault();
+    console.log('🚀 Drag started');
+    mouseMoveCountRef.current = 0;
+    lastLogTimeRef.current = Date.now();
+    setIsDragging(true);
+  }, []);
+
+  const handleMouseMove = useCallback((e) => {
+    if (!isDragging) return;
+    
+    mouseMoveCountRef.current++;
+    const now = Date.now();
+    
+    // Log mouse event frequency every 500ms
+    if (now - lastLogTimeRef.current > 500) {
+      console.log(`🎯 Mouse events: ${mouseMoveCountRef.current} in 500ms`);
+      mouseMoveCountRef.current = 0;
+      lastLogTimeRef.current = now;
+    }
+    
+    // Throttle updates using requestAnimationFrame
+    if (rafIdRef.current) {
+      cancelAnimationFrame(rafIdRef.current);
+    }
+    
+    rafIdRef.current = requestAnimationFrame(() => {
+      const rafTime = Date.now();
+      const timeSinceLastUpdate = rafTime - lastUpdateTimeRef.current;
+      
+      // Limit updates to ~30fps (33ms intervals)
+      if (timeSinceLastUpdate < 33) {
+        console.log(`⏱️ RAF: Skipping update (${timeSinceLastUpdate}ms too soon)`);
+        return;
+      }
+      
+      console.log(`⚡ RAF: Executing resize update (${timeSinceLastUpdate}ms since last)`);
+      
+      const containerWidth = window.innerWidth;
+      const newLeftWidth = (e.clientX / containerWidth) * 100;
+      
+      // Constrain between 20% and 80%
+      const constrainedWidth = Math.max(20, Math.min(80, newLeftWidth));
+      
+      console.log(`🎨 CSS: Panel width changing to ${constrainedWidth.toFixed(1)}%`);
+      
+      const stateUpdateStart = performance.now();
+      setLeftPanelWidth(constrainedWidth);
+      const stateUpdateTime = performance.now() - stateUpdateStart;
+      
+      console.log(`🔄 State update took: ${stateUpdateTime.toFixed(2)}ms`);
+      
+      lastUpdateTimeRef.current = rafTime;
+    });
+  }, [isDragging]);
+
+  const handleMouseUp = useCallback(() => {
+    console.log('🏁 Drag ended');
+    setIsDragging(false);
+    // Cancel any pending animation frame
+    if (rafIdRef.current) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+  }, []);
+
+  // Add global mouse events when dragging
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      };
+    }
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   return (
     <div style={{ 
@@ -120,15 +229,18 @@ function App() {
       
       {/* Left: 2D Graph */}
       <div style={{ 
-        width: '50%', 
+        width: `${leftPanelWidth}%`, 
         height: '100%',
-        borderRight: '1px solid #333',
-        overflow: 'hidden'  // Prevent scrolling in 2D section
+        overflow: 'hidden',
+        position: 'relative',
+        willChange: isDragging ? 'width' : 'auto', // Hardware acceleration during drag
+        transition: isDragging ? 'none' : 'width 0.15s ease-out', // Smooth transition when not dragging
+        minWidth: '200px' // Prevent canvas from becoming too small
       }}>
         <Graph2D
           nodes={nodes2D}
           links={links2D}
-          dimensions={dimensions}
+          dimensions={canvasDimensions}
           onNodeClick={handle2DNodeClick}
         />
         <div style={{
@@ -141,20 +253,52 @@ function App() {
           padding: '8px',
           borderRadius: '4px'
         }}>
-          📊 2D View
+          📊 2D View ({Math.round(leftPanelWidth)}%)
         </div>
+      </div>
+      
+      {/* Resizer Handle */}
+      <div
+        style={{
+          width: '6px',
+          height: '100%',
+          backgroundColor: isDragging ? '#555' : '#333',
+          cursor: 'col-resize',
+          position: 'relative',
+          transition: isDragging ? 'none' : 'background-color 0.2s ease',
+          zIndex: 10,
+          willChange: 'background-color', // Hardware acceleration for color changes
+          touchAction: 'none' // Prevent touch scrolling on mobile
+        }}
+        onMouseDown={handleMouseDown}
+      >
+        {/* Visual grip dots */}
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '4px',
+          height: '24px',
+          background: 'repeating-linear-gradient(to bottom, transparent 0px, transparent 1px, rgba(255,255,255,0.3) 1px, rgba(255,255,255,0.3) 2px)',
+          pointerEvents: 'none'
+        }} />
       </div>
       
       {/* Right: 3D Graph */}
       <div style={{ 
-        width: '50%', 
+        width: `${100 - leftPanelWidth}%`, 
         height: '100%',
-        overflow: 'hidden'  // Prevent scrolling in 3D section
+        overflow: 'hidden',
+        position: 'relative',
+        willChange: isDragging ? 'width' : 'auto', // Hardware acceleration during drag  
+        transition: isDragging ? 'none' : 'width 0.15s ease-out', // Smooth transition when not dragging
+        minWidth: '200px' // Prevent canvas from becoming too small
       }}>
         <Graph3D 
           nodes={nodes3D}
           links={links3D}
-          dimensions={dimensions}
+          dimensions={canvasDimensions}
           onNodeClick={handle3DNodeClick}
           isRotating={isRotating}
           setIsRotating={setIsRotating}
@@ -172,7 +316,7 @@ function App() {
           alignItems: 'center',
           gap: '8px'
         }}>
-          🌐 3D View
+          🌐 3D View ({Math.round(100 - leftPanelWidth)}%)
           <button
             onClick={() => setIsRotating(!isRotating)}
             style={{
