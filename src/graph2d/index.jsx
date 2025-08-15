@@ -120,7 +120,7 @@ const Graph2D = ({
         enableNodeDrag={true}
         enableZoomInteraction={true}
         enablePanInteraction={true}
-        zoom={0.2} // Default zoom to 60% (40% zoomed out)
+        zoom={0.9} // Default zoom to 60% (40% zoomed out)
       />
       
       {/* HTML overlays for proper text layering */}
