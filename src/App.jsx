@@ -1,0 +1,341 @@
+import React, { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
+import Graph2D from './graph2d';
+import Graph3D from './graph3d';
+import NodeLegend from './components/NodeLegend';
+import Header from './components/Header';
+import { prepareNodes, toBidirectional } from './utils/graphUtils.js';
+
+function App() {
+  const [nodes, setNodes] = useState([]);
+  const [links, setLinks] = useState([]);
+  const [isRotating, setIsRotating] = useState(true);
+  const [leftPanelWidth, setLeftPanelWidth] = useState(50); // percentage
+  const [isDragging, setIsDragging] = useState(false);
+  const [fullscreenMode, setFullscreenMode] = useState(null); // null | '2d' | '3d'
+  const [showLinkTexts2D, setShowLinkTexts2D] = useState(true);
+  const [showBidirectional, setShowBidirectional] = useState(false);
+  const [alternativeShapes, setAlternativeShapes] = useState(false);
+  const rafIdRef = useRef(null);
+  const lastUpdateTimeRef = useRef(0);
+
+  // Load the mock data from baseline.json
+  useEffect(() => {
+    console.log('📊 App: Loading mock data...');
+    fetch('/mock-data/baseline.json')
+      .then(response => {
+        console.log('📊 App: Fetch response received', { ok: response.ok, status: response.status });
+        return response.json();
+      })
+      .then(data => {
+        console.log('📊 App: Data loaded successfully:', {
+          nodeCount: data.nodes?.length || 0,
+          linkCount: data.links?.length || 0,
+          firstNode: data.nodes?.[0],
+          firstLink: data.links?.[0]
+        });
+        
+        // Validate data structure
+        if (!Array.isArray(data.nodes) || !Array.isArray(data.links)) {
+          throw new Error('Invalid data structure: nodes and links must be arrays');
+        }
+        
+        setNodes(data.nodes);
+        setLinks(data.links);
+      })
+      .catch(error => {
+        console.error('❌ App: Error loading data:', error);
+        // Set empty arrays as fallback
+        setNodes([]);
+        setLinks([]);
+      });
+  }, []);
+
+  // Initialize positions for nodes (only once before cloning)
+  const initPositions = (nodeArray) => {
+    nodeArray.forEach(node => {
+      if (!node.x) node.x = Math.random() * 400 - 200;
+      if (!node.y) node.y = Math.random() * 400 - 200;
+      if (!node.z) node.z = Math.random() * 400 - 200;
+    });
+  };
+
+  // Prepare nodes with computed properties and create separate data for each graph
+  const [nodes2D, nodes3D, links2D, links3D] = useMemo(() => {
+    console.log('📊 useMemo triggered - showBidirectional:', showBidirectional);
+    console.log('📊 Original links count:', links.length);
+    
+    if (nodes.length === 0) return [[], [], [], []];
+    
+    
+    // Prepare nodes with computed properties
+    const enhancedNodes = prepareNodes(nodes, links);
+    
+    // Clean nodes (remove D3 artifacts but keep positions)
+    const cleanNodes = enhancedNodes.map(({ vx, vy, vz, index, ...rest }) => ({ ...rest }));
+    
+    // Initialize positions BEFORE cloning
+    initPositions(cleanNodes);
+    
+    // Create completely separate node arrays via deep clone
+    const separateNodes2D = JSON.parse(JSON.stringify(cleanNodes));
+    const separateNodes3D = JSON.parse(JSON.stringify(cleanNodes));
+    
+    // Create separate link arrays with ID validation
+    let processedLinks = links.map(link => ({
+      ...link,
+      source: typeof link.source === 'object' ? link.source.id : link.source,
+      target: typeof link.target === 'object' ? link.target.id : link.target
+    }));
+    
+    console.log('📊 Processed links before bidirectional:', processedLinks.length);
+    
+    // Apply bidirectional mode if enabled
+    if (showBidirectional) {
+      console.log('📊 Applying bidirectional mode...');
+      processedLinks = toBidirectional(processedLinks);
+    } else {
+      console.log('📊 Keeping unidirectional mode');
+    }
+    
+    console.log('📊 Final processed links:', processedLinks.length);
+    
+    const separateLinks2D = JSON.parse(JSON.stringify(processedLinks));
+    const separateLinks3D = JSON.parse(JSON.stringify(processedLinks));
+    
+    
+    return [separateNodes2D, separateNodes3D, separateLinks2D, separateLinks3D];
+  }, [nodes, links, showBidirectional]);
+
+
+  // Force immediate dimension updates using useLayoutEffect for canvas sync
+  const [canvasDimensions, setCanvasDimensions] = useState({
+    width2D: (window.innerWidth * leftPanelWidth) / 100,
+    width3D: (window.innerWidth * (100 - leftPanelWidth)) / 100,
+    height: window.innerHeight,
+    isDragging: isDragging
+  });
+  
+  // Synchronous dimension updates BEFORE browser paint to prevent canvas lag
+  useLayoutEffect(() => {
+    const new2DWidth = (window.innerWidth * leftPanelWidth) / 100;
+    const new3DWidth = (window.innerWidth * (100 - leftPanelWidth)) / 100;
+    
+    
+    setCanvasDimensions({
+      width2D: new2DWidth,
+      width3D: new3DWidth,
+      height: window.innerHeight,
+      isDragging: isDragging
+    });
+  }, [leftPanelWidth, isDragging]);
+
+  // Stable callback functions to prevent unnecessary re-renders
+  const handle2DNodeClick = useCallback((node) => {
+    console.log('2D clicked:', node);
+  }, []);
+
+  const handle3DNodeClick = useCallback((node) => {
+    console.log('3D clicked:', node);
+  }, []);
+
+  // Fullscreen toggle function
+  const toggleFullscreen = useCallback((mode) => {
+    if (fullscreenMode === mode) {
+      // Exit fullscreen - return to 50/50 split
+      setFullscreenMode(null);
+      setLeftPanelWidth(50);
+    } else {
+      // Enter fullscreen
+      setFullscreenMode(mode);
+      setLeftPanelWidth(mode === '2d' ? 100 : 0);
+    }
+  }, [fullscreenMode]);
+
+  // Toggle link texts in 2D view
+  const toggleLinkTexts2D = useCallback(() => {
+    setShowLinkTexts2D(prev => !prev);
+  }, []);
+
+  // Toggle bidirectional links
+  const toggleBidirectional = useCallback(() => {
+    console.log('🔘 toggleBidirectional clicked! Current state:', showBidirectional);
+    setShowBidirectional(prev => {
+      const newValue = !prev;
+      console.log('🔘 Setting showBidirectional to:', newValue);
+      return newValue;
+    });
+  }, [showBidirectional]);
+
+  // Toggle alternative shapes
+  const toggleAlternativeShapes = useCallback(() => {
+    setAlternativeShapes(prev => {
+      console.log('📊 alternativeShapes:', prev, '→', !prev);
+      return !prev;
+    });
+  }, []);
+
+  // Resizer drag handlers
+  const handleMouseDown = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleMouseMove = useCallback((e) => {
+    if (!isDragging) return;
+    
+    // Throttle updates using requestAnimationFrame
+    if (rafIdRef.current) {
+      cancelAnimationFrame(rafIdRef.current);
+    }
+    
+    rafIdRef.current = requestAnimationFrame(() => {
+      const rafTime = Date.now();
+      const timeSinceLastUpdate = rafTime - lastUpdateTimeRef.current;
+      
+      // Limit updates to ~30fps (33ms intervals)
+      if (timeSinceLastUpdate < 33) {
+        return;
+      }
+      
+      const containerWidth = window.innerWidth;
+      const newLeftWidth = (e.clientX / containerWidth) * 100;
+      
+      // Constrain between 20% and 80%
+      const constrainedWidth = Math.max(20, Math.min(80, newLeftWidth));
+      
+      setLeftPanelWidth(constrainedWidth);
+      
+      lastUpdateTimeRef.current = rafTime;
+    });
+  }, [isDragging]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+    // Cancel any pending animation frame
+    if (rafIdRef.current) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+  }, []);
+
+  // Add global mouse events when dragging
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      };
+    }
+  }, [isDragging, handleMouseMove, handleMouseUp]);
+
+  return (
+    <div style={{ 
+      width: '100vw', 
+      height: '100vh', 
+      display: 'flex',
+      backgroundColor: '#000',
+      overflow: 'hidden'  // Prevent any scrolling
+    }}>
+      
+      {/* Header with Legend */}
+      <Header alternativeShapes={alternativeShapes} />
+      
+      {/* Left: 2D Graph */}
+      <div style={{ 
+        width: `${leftPanelWidth}%`, 
+        height: '100%',
+        overflow: 'hidden',
+        position: 'relative',
+        willChange: isDragging ? 'width' : 'auto', // Hardware acceleration during drag
+        transition: isDragging ? 'none' : 'width 0.15s ease-out', // Smooth transition when not dragging
+        minWidth: '200px' // Prevent canvas from becoming too small
+      }}>
+        <Graph2D
+          nodes={nodes2D}
+          links={links2D}
+          dimensions={canvasDimensions}
+          onNodeClick={handle2DNodeClick}
+          showLinkTexts={showLinkTexts2D}
+          showBidirectional={showBidirectional}
+          alternativeShapes={alternativeShapes}
+        />
+      </div>
+      
+      {/* Resizer Handle - Hidden in fullscreen mode */}
+      {fullscreenMode === null && (
+        <div
+          style={{
+            width: '6px',
+            height: '100%',
+            backgroundColor: isDragging ? '#555' : '#333',
+            cursor: 'col-resize',
+            position: 'relative',
+            transition: isDragging ? 'none' : 'background-color 0.2s ease',
+            zIndex: 10,
+            willChange: 'background-color', // Hardware acceleration for color changes
+            touchAction: 'none' // Prevent touch scrolling on mobile
+          }}
+          onMouseDown={handleMouseDown}
+        >
+          {/* Visual grip dots */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '4px',
+            height: '24px',
+            background: 'repeating-linear-gradient(to bottom, transparent 0px, transparent 1px, rgba(255,255,255,0.3) 1px, rgba(255,255,255,0.3) 2px)',
+            pointerEvents: 'none'
+          }} />
+        </div>
+      )}
+      
+      {/* Right: 3D Graph */}
+      <div style={{ 
+        width: `${100 - leftPanelWidth}%`, 
+        height: '100%',
+        overflow: 'hidden',
+        position: 'relative',
+        willChange: isDragging ? 'width' : 'auto', // Hardware acceleration during drag  
+        transition: isDragging ? 'none' : 'width 0.15s ease-out', // Smooth transition when not dragging
+        minWidth: '200px' // Prevent canvas from becoming too small
+      }}>
+        <Graph3D 
+          nodes={nodes3D}
+          links={links3D}
+          dimensions={canvasDimensions}
+          onNodeClick={handle3DNodeClick}
+          isRotating={isRotating}
+          setIsRotating={setIsRotating}
+          showBidirectional={showBidirectional}
+          alternativeShapes={alternativeShapes}
+        />
+      </div>
+      
+      {/* Node Legend Footer Bar */}
+      <NodeLegend 
+        leftPanelWidth={leftPanelWidth}
+        fullscreenMode={fullscreenMode}
+        isRotating={isRotating}
+        showLinkTexts2D={showLinkTexts2D}
+        showBidirectional={showBidirectional}
+        alternativeShapes={alternativeShapes}
+        onToggleFullscreen={toggleFullscreen}
+        onToggleRotation={() => setIsRotating(!isRotating)}
+        onToggleLinkTexts2D={toggleLinkTexts2D}
+        onToggleBidirectional={toggleBidirectional}
+        onToggleAlternativeShapes={toggleAlternativeShapes}
+      />
+    </div>
+  );
+}
+
+export default App;

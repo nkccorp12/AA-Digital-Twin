@@ -1,0 +1,17 @@
+{
+  "nodes": [
+    {"id": "E1", "type": "environment", "label": "E1"},
+    {"id": "E2", "type": "environment", "label": "E2"},
+    {"id": "B1", "type": "boundary", "label": "B1"},
+    {"id": "B2", "type": "boundary", "label": "B2"},
+    {"id": "S1", "type": "system", "label": "S1"},
+    {"id": "S2", "type": "system", "label": "S2"}
+  ],
+  "links": [
+    {"source": "E1", "target": "B1", "weight": 0.7, "influenceType": "regulatory"},
+    {"source": "E2", "target": "B1", "weight": 0.3, "influenceType": "market"},
+    {"source": "B1", "target": "S1", "weight": 0.5, "influenceType": "policy"},
+    {"source": "B2", "target": "S2", "weight": 0.8, "influenceType": "technical"},
+    {"source": "S1", "target": "S2", "weight": 0.4, "influenceType": "operational"}
+  ]
+}

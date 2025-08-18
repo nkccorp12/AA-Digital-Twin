@@ -1,0 +1,210 @@
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import ForceGraph2D from 'react-force-graph-2d';
+import ForceGraph3D from 'react-force-graph-3d';
+import SpriteText from 'three-spritetext';
+import * as d3 from 'd3-force';
+import * as THREE from 'three';
+
+export default function ToggleableGraph({ nodes, links, onNodeClick, showMetrics = false, getNodeDisplayValue, view3D, onToggleView }) {
+  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const fg3DRef = useRef();
+  const fg2DRef = useRef();
+  const containerRef = useRef();
+
+  // Common properties for both graphs
+  const commonProps = {
+    graphData: { nodes, links },
+    nodeLabel: node => `${node.id}: ${node.label}`,
+    linkLabel: link => `${link.influenceType} (${link.weight.toFixed(2)})`,
+    nodeAutoColorBy: showMetrics ? 'centrality' : 'type',
+    nodeVal: node => node.metadata ? node.metadata.confidence * 8 : 4,
+    linkWidth: link => link.weight * 3,
+    linkOpacity: 0.6,
+    onNodeClick: onNodeClick,
+  };
+
+  // 2D specific properties
+  const props2D = {
+    ...commonProps,
+    linkColor: '#ffffff', // White links for black background
+  };
+
+  // Helper function to create node cubes with sprites
+  const createNodeSprite = (node) => {
+    const size = node.metadata?.confidence * 8 || 4;
+    const cube = new THREE.Mesh(
+      new THREE.BoxGeometry(size, size, size),
+      new THREE.MeshLambertMaterial({
+        color: node.color || Math.round(Math.random() * Math.pow(2, 24)),
+        transparent: true,
+        opacity: 0.75
+      })
+    );
+    
+    // Add text sprite above cube
+    const sprite = new SpriteText(node.label || node.id);
+    sprite.material.depthWrite = false;
+    sprite.material.depthTest = false; // Always render on top
+    sprite.color = '#ffffff'; // White text for black background
+    sprite.textHeight = 8;
+    sprite.position.y = size/2 + 10; // position above cube
+    cube.add(sprite);
+    
+    // Add value sprite below cube (always show values)
+    if (getNodeDisplayValue) {
+      const displayValue = getNodeDisplayValue(node);
+      if (displayValue) {
+        const valueSprite = new SpriteText(displayValue);
+        valueSprite.material.depthWrite = false;
+        valueSprite.material.depthTest = false;
+        valueSprite.color = '#FFD700'; // Gold color for values
+        valueSprite.textHeight = 6;
+        valueSprite.position.y = -(size/2 + 8); // position below cube
+        cube.add(valueSprite);
+      }
+    }
+    
+    return cube;
+  };
+
+  // Resize handler
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setDimensions({
+          width: rect.width,
+          height: rect.height
+        });
+      }
+    };
+
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, []);
+
+  // 3D configuration with proper force layout
+  useEffect(() => {
+    if (view3D && fg3DRef.current) {
+      const fg = fg3DRef.current;
+      
+      // Configure force layout - increased distances for better spacing
+      fg.d3Force('charge', d3.forceManyBody().strength(-60));
+      fg.d3Force('link', d3.forceLink().distance(link => 80 + link.weight * 60));
+      fg.d3Force('center', d3.forceCenter());
+
+      // Set initial camera position - zoomed out more
+      setTimeout(() => {
+        fg.cameraPosition({ x: 390, y: 390, z: 390 }, { x: 0, y: 0, z: 0 }, 1000);
+      }, 200);
+    }
+  }, [view3D]);
+
+  // 2D configuration
+  useEffect(() => {
+    if (!view3D && fg2DRef.current) {
+      const fg = fg2DRef.current;
+      
+      // 2D Force layout - increased distances for better spacing
+      fg.d3Force('charge', d3.forceManyBody().strength(-30));
+      fg.d3Force('link', d3.forceLink().distance(link => 100 + link.weight * 40));
+    }
+  }, [view3D]);
+
+  // Stabilized 2D node drawing function
+  const drawNode = useCallback((node, ctx, globalScale) => {
+    // Use the same size calculation as nodeVal in commonProps
+    const size = node.metadata ? node.metadata.confidence * 8 : 4;
+    
+    // Draw node circle
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
+    ctx.fillStyle = node.color;
+    ctx.fill();
+
+    // Draw node label
+    const label = node.label || node.id;
+    const fontSize = 12 / globalScale;
+    ctx.font = `${fontSize}px Sans-Serif`;
+    ctx.fillStyle = '#ffffff'; // White text on black background
+    ctx.textAlign = 'center';
+    ctx.fillText(label, node.x, node.y + size + fontSize);
+    
+    // Draw node value (always show values)
+    if (getNodeDisplayValue) {
+      const displayValue = getNodeDisplayValue(node);
+      if (displayValue) {
+        const valueFontSize = 10 / globalScale;
+        ctx.font = `bold ${valueFontSize}px Sans-Serif`;
+        ctx.fillStyle = '#FFD700'; // Gold color for values
+        ctx.fillText(displayValue, node.x, node.y + size + fontSize + valueFontSize + 2);
+      }
+    }
+  }, [getNodeDisplayValue]);
+
+  return (
+    <div ref={containerRef} className="relative w-full h-full">
+
+      {/* Graph Container */}
+      <div className="w-full h-full">
+        {view3D ? (
+          <ForceGraph3D
+            ref={fg3DRef}
+            {...commonProps}
+            width={dimensions.width}
+            height={dimensions.height}
+            backgroundColor="#000000"
+            nodeThreeObject={createNodeSprite}
+            nodeThreeObjectExtend={false}
+            linkThreeObjectExtend={true}
+            linkThreeObject={link => {
+              // Add text sprite on links
+              const sprite = new SpriteText(`${link.influenceType} (${link.weight.toFixed(2)})`);
+              sprite.color = 'white';
+              sprite.textHeight = 6;
+              sprite.material.depthTest = false; // Always render on top
+              return sprite;
+            }}
+            linkPositionUpdate={(sprite, { start, end }) => {
+              const middlePos = Object.assign(...['x', 'y', 'z'].map(c => ({
+                [c]: start[c] + (end[c] - start[c]) / 2 // calc middle point
+              })));
+              // Position sprite in middle of link
+              Object.assign(sprite.position, middlePos);
+            }}
+            linkDirectionalParticles={2}
+            linkDirectionalParticleWidth={2}
+            linkDirectionalParticleColor="#ffffff"
+            linkDirectionalParticleSpeed={0.008}
+          />
+        ) : (
+          <ForceGraph2D
+            ref={fg2DRef}
+            {...props2D}
+            width={dimensions.width}
+            height={dimensions.height}
+            backgroundColor="#000000"
+            linkColor={() => 'rgba(255,255,255,0.8)'}
+            linkOpacity={1}
+            linkWidth={link => Math.max(1, link.weight * 2)}
+            nodeCanvasObject={drawNode}
+            linkDirectionalParticles={1}
+            linkDirectionalParticleWidth={2}
+            linkDirectionalParticleSpeed={0.01}
+          />
+        )}
+      </div>
+
+      {/* View Info */}
+      <div className="absolute bottom-4 left-4 bg-black/90 border border-gray-600 text-white px-3 py-2 rounded-lg text-sm backdrop-blur-sm">
+        <div className="font-medium">
+          {view3D ? '🌐 3D View' : '📊 2D View'}
+        </div>
+        <div className="text-xs text-gray-300">
+          {view3D ? 'Interactive 3D visualization' : 'Flat network diagram'}
+        </div>
+      </div>
+    </div>
+  );
+}
