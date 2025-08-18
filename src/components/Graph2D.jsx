@@ -1,8 +1,13 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import { configure2DForces } from '../utils/forceSimulation.js';
-import { getNodeDisplayValue, pairHashAngle, toBidirectional } from '../utils/graphUtils.js';
+import { getNodeDisplayValue } from '../utils/graphUtils.js';
 import { GRAPH_CONSTANTS } from '../constants/graphConstants.js';
+
+console.log('✅ components/Graph2D.jsx mounted');
+
+const FWD_COLOR = '#ff4d4d';
+const REV_COLOR = '#2b6cff';
 
 const Graph2D = ({ 
   nodes, 
@@ -91,125 +96,138 @@ const Graph2D = ({
   // Configure forces when component mounts
   useEffect(() => {
     if (fgRef.current) {
-      configure2DForces(fgRef.current);
+      // Even stronger repulsion for optimal spacing
+      fgRef.current.d3Force('charge').strength(-600);
+      
+      // Larger distance between connected nodes
+      fgRef.current.d3Force('link').distance(80);
+      
+      // Center force to keep nodes together
+      const centerForce = fgRef.current.d3Force('center');
+      if (centerForce) {
+        centerForce.x(0).y(0);
+      }
+      
+      console.log('🔧 D3 Forces configured: charge=-600, link=80');
     }
   }, []);
 
-  // Constants for custom link rendering
-  const EDGE_OFFSET = 14;        // px distance between two tracks
-  const ARROW_SIZE = 8;
-  const FWD_COLOR = '#ff4d4d';
-  const REV_COLOR = '#2b6cff';
-
-  // Quadratic Bezier helper functions
-  const pointOnQuad = useCallback((x0, y0, cx, cy, x1, y1, t) => {
-    const u = 1 - t;
-    return {
-      x: u * u * x0 + 2 * u * t * cx + t * t * x1,
-      y: u * u * y0 + 2 * u * t * cy + t * t * y1
-    };
-  }, []);
-
-  const tangentOnQuad = useCallback((x0, y0, cx, cy, x1, y1, t) => {
-    return {
-      x: 2 * (1 - t) * (cx - x0) + 2 * t * (x1 - cx),
-      y: 2 * (1 - t) * (cy - y0) + 2 * t * (y1 - cy)
-    };
-  }, []);
-
-  const drawArrow = useCallback((ctx, x, y, angle, size) => {
+  // Debug bidirectional link drawing function with extreme visual differences
+  const drawBidirectionalLink = useCallback((link, ctx, globalScale) => {
+    const source = link.source;
+    const target = link.target;
+    
+    // Skip if nodes don't have positions
+    if (!source || !target || source.x == null || target.x == null) {
+      console.log('❌ Skipping link - no positions:', link.id);
+      return;
+    }
+    
+    // DEBUG: Log every single link being drawn
+    console.log('🎨 Drawing link:', {
+      id: link.id,
+      isReverse: link.isReverse,
+      source: { x: source.x, y: source.y },
+      target: { x: target.x, y: target.y }
+    });
+    
+    // Calculate line vector
+    const dx = target.x - source.x;
+    const dy = target.y - source.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance === 0) {
+      console.log('❌ Zero distance link:', link.id);
+      return;
+    }
+    
+    // Normalize direction vector
+    const unitX = dx / distance;
+    const unitY = dy / distance;
+    
+    // EXTREME OFFSET for debugging - 50px instead of 12px
+    const offsetDistance = 50 / globalScale;
+    const normalX = -unitY; // Perpendicular to line
+    const normalY = unitX;
+    
+    // Determine offset direction based on isReverse
+    const offset = link.isReverse ? -offsetDistance : offsetDistance;
+    
+    // Calculate start and end points with offset
+    const startX = source.x + normalX * offset;
+    const startY = source.y + normalY * offset;
+    const endX = target.x + normalX * offset;
+    const endY = target.y + normalY * offset;
+    
+    console.log('📏 Link offset calculation:', {
+      id: link.id,
+      isReverse: link.isReverse,
+      offsetDistance,
+      offset,
+      normal: { x: normalX, y: normalY },
+      start: { x: startX, y: startY },
+      end: { x: endX, y: endY }
+    });
+    
+    // Draw the line
     ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle);
     ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(-size, size * 0.6);
-    ctx.lineTo(-size, -size * 0.6);
-    ctx.closePath();
-    ctx.fill();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+    
+    // EXTREME VISUAL DIFFERENCES for debugging
+    if (link.isReverse) {
+      ctx.strokeStyle = '#00FF00'; // Bright green for reverse
+      ctx.lineWidth = Math.max(1, 8 / globalScale); // Very thick
+      ctx.setLineDash([10, 5]); // Dashed line
+    } else {
+      ctx.strokeStyle = '#FF00FF'; // Bright pink for forward  
+      ctx.lineWidth = Math.max(1, 4 / globalScale); // Medium thick
+      ctx.setLineDash([]); // Solid line
+    }
+    
+    ctx.stroke();
     ctx.restore();
   }, []);
-
-  const drawDualCurve = useCallback((link, ctx, globalScale) => {
-    const s = link.source, t = link.target;
-    if (!s || !t || s.x == null || t.x == null) return;
-
-    const dx = t.x - s.x, dy = t.y - s.y;
-    const len = Math.hypot(dx, dy) || 1;
-    const nx = -dy / len, ny = dx / len;            // Normal vector
-    const midx = (s.x + t.x) / 2, midy = (s.y + t.y) / 2;
-
-    const sign = link.isReverse ? -1 : 1;
-    const off = EDGE_OFFSET * sign;
-
-    const cx = midx + nx * off;                     // Control point shifted
-    const cy = midy + ny * off;
-
-    // Draw curve
-    ctx.beginPath();
-    ctx.moveTo(s.x, s.y);
-    ctx.quadraticCurveTo(cx, cy, t.x, t.y);
-    ctx.lineWidth = Math.max(1, 1.5 / globalScale);
-    ctx.strokeStyle = sign === 1 ? FWD_COLOR : REV_COLOR;
-    ctx.stroke();
-
-    // Draw arrow at 60% of curve
-    const p = pointOnQuad(s.x, s.y, cx, cy, t.x, t.y, 0.6);
-    const tg = tangentOnQuad(s.x, s.y, cx, cy, t.x, t.y, 0.6);
-    ctx.fillStyle = sign === 1 ? FWD_COLOR : REV_COLOR;
-    drawArrow(ctx, p.x, p.y, Math.atan2(tg.y, tg.x), ARROW_SIZE / globalScale);
-  }, [pointOnQuad, tangentOnQuad, drawArrow]);
-
-  // Prepare graph data with bidirectional links if enabled
-  const graphData = {
-    nodes,
-    links: showBidirectional ? toBidirectional(links) : links
-  };
-
-  // Base props for 2D graph
-  const graphProps = {
-    graphData,
-    nodeLabel: node => `${node.label || node.id}`,
-    linkLabel: link => `${link.influenceType || 'Connection'} (${link.weight?.toFixed(2) || '0'})`,
-    onNodeClick: onNodeClick
-  };
 
   return (
     <div className="w-full h-full">
       <ForceGraph2D
         ref={fgRef}
-        {...graphProps}
+        graphData={{ nodes, links }}
         width={dimensions.width}
         height={dimensions.height}
         backgroundColor={GRAPH_CONSTANTS.COLORS.BACKGROUND}
-        warmupTicks={50}
+        warmupTicks={100}
         
-        // Node rendering (custom only)
+        // Standard node rendering
         nodeCanvasObject={renderNode}
+        nodeLabel={node => `${node.label || node.id}`}
         
-        // Custom link rendering - replace standard rendering
-        linkCanvasObjectMode={() => 'replace'}
-        linkCanvasObject={(link, ctx, globalScale) => {
-          if (showBidirectional) {
-            drawDualCurve(link, ctx, globalScale);
-          } else {
-            // Simple standard line for unidirectional
-            link.isReverse = false;
-            drawDualCurve(link, ctx, globalScale);
-          }
-        }}
+        // Link styling - only change when bidirectional
+        linkColor={l => showBidirectional ? (l.isReverse ? REV_COLOR : FWD_COLOR) : '#9aa4b2'}
+        linkWidth={l => showBidirectional ? 1.5 : 1}
+        linkOpacity={0.9}
         
-        // Disable standard link rendering
-        linkColor={() => 'rgba(0,0,0,0)'}  // Transparent - we draw our own
-        linkWidth={0}
-        linkCurvature={0}
-        linkDirectionalArrowLength={0}  // We draw our own arrows
-        linkDirectionalParticles={0}    // Disable particles for clean look
+        // Bidirectional separation - only when enabled
+        linkCurvature={l => showBidirectional ? 0.3 : 0}
+        linkCurveRotation={l => showBidirectional ? (l.isReverse ? Math.PI : 0) : 0}
+        
+        // Standard arrows - keep simple
+        linkDirectionalArrowLength={4}
+        linkDirectionalArrowRelPos={0.5}
+        linkDirectionalParticles={0}
+        
+        // Link labels
+        linkLabel={link => `${link.influenceType || 'Connection'} (${link.weight?.toFixed(2) || '0'})`}
         
         // Interaction
+        onNodeClick={onNodeClick}
         enableNodeDrag={true}
         enableZoomInteraction={true}
         enablePanInteraction={true}
+        
+        // Performance
+        pixelRatio={Math.min(2, window.devicePixelRatio || 1)}
       />
     </div>
   );

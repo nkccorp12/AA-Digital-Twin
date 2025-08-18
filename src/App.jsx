@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
-import Graph2D from './graph2d';
-import Graph3D from './graph3d';
+import Graph2D from './components/Graph2D.jsx';
+import Graph3D from './Graph3D.jsx';
 import NodeLegend from './components/NodeLegend';
 import Header from './components/Header';
 import { prepareNodes, toBidirectional } from './utils/graphUtils.js';
@@ -61,11 +61,7 @@ function App() {
 
   // Prepare nodes with computed properties and create separate data for each graph
   const [nodes2D, nodes3D, links2D, links3D] = useMemo(() => {
-    console.log('📊 useMemo triggered - showBidirectional:', showBidirectional);
-    console.log('📊 Original links count:', links.length);
-    
     if (nodes.length === 0) return [[], [], [], []];
-    
     
     // Prepare nodes with computed properties
     const enhancedNodes = prepareNodes(nodes, links);
@@ -87,21 +83,23 @@ function App() {
       target: typeof link.target === 'object' ? link.target.id : link.target
     }));
     
-    console.log('📊 Processed links before bidirectional:', processedLinks.length);
-    
     // Apply bidirectional mode if enabled
     if (showBidirectional) {
-      console.log('📊 Applying bidirectional mode...');
+      console.log('📊 BIDI: applying toBidirectional to', processedLinks.length, 'links');
       processedLinks = toBidirectional(processedLinks);
+      console.log('📊 BIDI: result', processedLinks.length, 'links');
+      
+      // Sample of first 3 links
+      const sample = processedLinks.slice(0, 3).map(l => 
+        ({ id: l.id, s: l.source, t: l.target, rev: !!l.isReverse })
+      );
+      console.log('📊 BIDI sample:', sample);
     } else {
-      console.log('📊 Keeping unidirectional mode');
+      console.log('📊 UNI: keeping', processedLinks.length, 'unidirectional links');
     }
-    
-    console.log('📊 Final processed links:', processedLinks.length);
     
     const separateLinks2D = JSON.parse(JSON.stringify(processedLinks));
     const separateLinks3D = JSON.parse(JSON.stringify(processedLinks));
-    
     
     return [separateNodes2D, separateNodes3D, separateLinks2D, separateLinks3D];
   }, [nodes, links, showBidirectional]);
@@ -158,12 +156,8 @@ function App() {
 
   // Toggle bidirectional links
   const toggleBidirectional = useCallback(() => {
-    console.log('🔘 toggleBidirectional clicked! Current state:', showBidirectional);
-    setShowBidirectional(prev => {
-      const newValue = !prev;
-      console.log('🔘 Setting showBidirectional to:', newValue);
-      return newValue;
-    });
+    console.log('🔘 TOGGLE:', showBidirectional, '→', !showBidirectional);
+    setShowBidirectional(prev => !prev);
   }, [showBidirectional]);
 
   // Toggle alternative shapes
@@ -260,7 +254,7 @@ function App() {
         <Graph2D
           nodes={nodes2D}
           links={links2D}
-          dimensions={canvasDimensions}
+          dimensions={{ width: canvasDimensions.width2D, height: canvasDimensions.height }}
           onNodeClick={handle2DNodeClick}
           showLinkTexts={showLinkTexts2D}
           showBidirectional={showBidirectional}

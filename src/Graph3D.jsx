@@ -17,6 +17,8 @@ export default function Graph3D({ nodes = [], links = [], dimensions, isRotating
   const BASE_CURVE = 0.28;
   
   
+  
+  
   // Use the passed mock data or empty arrays as fallback
   const data = {
     nodes,
@@ -32,7 +34,7 @@ export default function Graph3D({ nodes = [], links = [], dimensions, isRotating
       // No need to call setInitial3DPositions here anymore
       
       // Set initial camera position (start at rotation position to avoid jump)
-      const distance = 440; // Increased for better overview of the graph (10% zoomed out)
+      const distance = 400; // Increased for better overview of the graph
       fgRef.current.cameraPosition({ x: 0, z: distance });
     }
   }, [nodes]);
@@ -40,7 +42,7 @@ export default function Graph3D({ nodes = [], links = [], dimensions, isRotating
   // Separate effect for rotation control (camera only, keep physics running)
   useEffect(() => {
     if (fgRef.current && nodes.length > 0) {
-      const distance = 440; // Same distance as initial camera (10% zoomed out)
+      const distance = 400; // Same distance as initial camera
 
       if (isRotating) {
         // Start camera orbit animation from current angle (no jump)
