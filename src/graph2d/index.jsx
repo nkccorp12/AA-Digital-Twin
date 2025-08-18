@@ -45,7 +45,7 @@ const Graph2D = ({
     const baseSize = node.size || GRAPH_CONSTANTS.NODE_SIZES.MIN;
     const radius = alternativeShapes 
       ? baseSize * 2.205  // Alternative shapes: 3x bigger than current 0.735x (0.735 * 3 = 2.205)
-      : baseSize * 1.65; // Standard shapes: 10% bigger than original 1.5x (1.5 * 1.1 = 1.65)
+      : baseSize * 2.145; // Standard shapes: 30% bigger than current 1.65x (1.65 * 1.3 = 2.145)
     const color = getNodeColor(node.type, alternativeShapes);
     
     // Draw node shape based on type
@@ -73,7 +73,7 @@ const Graph2D = ({
     if (fgRef.current && nodes.length > 0) {
       fgRef.current.d3Force('charge', forceManyBody().strength(-4720));
       fgRef.current.d3Force('link', forceLink().distance(200));  // Longer links for larger nodes and text space
-      fgRef.current.d3Force('center', forceCenter(0, 0));
+      fgRef.current.d3Force('center', forceCenter(-1200, 0));
     }
   }, [nodes]);
 
@@ -83,7 +83,7 @@ const Graph2D = ({
       // Small delay to ensure graph is properly initialized
       setTimeout(() => {
         if (fgRef.current) {
-          fgRef.current.zoom(0.5); // 50% zoomed out
+          fgRef.current.zoom(0.4); // 60% zoomed out
         }
       }, 100);
     }

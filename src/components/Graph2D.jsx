@@ -51,7 +51,7 @@ const Graph2D = ({
     if (!node.x || !node.y) return; // Skip if no position
     
     // Get node properties - make shapes bigger
-    const radius = (node.size || GRAPH_CONSTANTS.NODE_SIZES.MIN) * 1.8;  // 1.8x bigger
+    const radius = (node.size || GRAPH_CONSTANTS.NODE_SIZES.MIN) * 1.2;  // 1.2x bigger
     const color = node.color || GRAPH_CONSTANTS.COLORS.NODE_FALLBACK;
     
     // Draw node shape based on type

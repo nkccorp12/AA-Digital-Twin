@@ -130,7 +130,7 @@ export default function Graph3D({ nodes = [], links = [], dimensions, isRotating
         const group = new THREE.Group();
         
         // Use fixed size since nodes don't have size property
-        const size = 10;  // Fixed medium size
+        const size = 7;  // Fixed smaller size
         
         // Create 3D shape based on node type - using shape constants
         let geometry, material, shape;
