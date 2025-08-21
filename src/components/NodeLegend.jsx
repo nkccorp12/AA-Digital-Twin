@@ -208,11 +208,16 @@ const NodeLegend = ({
               backgroundColor: fullscreenMode === '3d' ? '#ef4444' : '#374151',
               color: 'white',
               border: 'none',
-              padding: '4px 8px',
+              padding: '8px',
               borderRadius: '4px',
               fontSize: '12px',
               cursor: 'pointer',
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              width: '32px',
+              height: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
             onMouseEnter={(e) => e.target.style.opacity = '0.8'}
             onMouseLeave={(e) => e.target.style.opacity = '1'}
@@ -226,11 +231,16 @@ const NodeLegend = ({
               backgroundColor: isRotating ? '#ef4444' : '#10b981',
               color: 'white',
               border: 'none',
-              padding: '4px 8px',
+              padding: '8px',
               borderRadius: '4px',
               fontSize: '10px',
               cursor: 'pointer',
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              width: '80px',
+              height: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
             onMouseEnter={(e) => e.target.style.opacity = '0.8'}
             onMouseLeave={(e) => e.target.style.opacity = '1'}

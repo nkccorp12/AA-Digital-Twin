@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
  * HTML Overlay for 2D link texts - analog to 3D linkThreeObject + linkPositionUpdate
  * Renders HTML elements positioned over the canvas like 3D SpriteText
  */
-const LinkTextOverlay = ({ nodes, links, fgRef, dimensions, visible = true }) => {
+const LinkTextOverlay = ({ nodes, links, fgRef, dimensions, visible = true, showBidirectional = false }) => {
   const overlayRef = useRef(null);
   const [linkElements, setLinkElements] = useState([]);
 
@@ -30,7 +30,8 @@ const LinkTextOverlay = ({ nodes, links, fgRef, dimensions, visible = true }) =>
         sourceId,
         targetId,
         text: linkText,
-        index
+        index,
+        isReverse: link.isReverse || false
       };
     });
 
@@ -71,9 +72,35 @@ const LinkTextOverlay = ({ nodes, links, fgRef, dimensions, visible = true }) =>
 
       if (!source || !target || source.x === undefined || source.y === undefined) return;
 
-      // Calculate middle point (same logic as 3D linkPositionUpdate)
-      const midX = (source.x + target.x) / 2;
-      const midY = (source.y + target.y) / 2;
+      // Calculate middle point - handle curved links for bidirectional mode
+      let midX, midY;
+      
+      if (showBidirectional) {
+        // Curved link logic (like Graph2D linkCurvature)
+        const curvature = 0.3; // Same as Graph2D
+        const dx = target.x - source.x;
+        const dy = target.y - source.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Find the element to get isReverse flag
+        const linkElement = linkElements.find(el => 
+          (el.sourceId === source.id && el.targetId === target.id) ||
+          (el.sourceId === target.id && el.targetId === source.id)
+        );
+        const isReverse = linkElement ? linkElement.isReverse : false;
+        
+        // Calculate perpendicular offset for curve
+        const offsetMultiplier = isReverse ? -curvature : curvature; // Reverse curves opposite direction
+        const offsetX = -dy / distance * distance * offsetMultiplier;
+        const offsetY = dx / distance * distance * offsetMultiplier;
+        
+        midX = (source.x + target.x) / 2 + offsetX;
+        midY = (source.y + target.y) / 2 + offsetY;
+      } else {
+        // Straight line middle point for standard mode
+        midX = (source.x + target.x) / 2;
+        midY = (source.y + target.y) / 2;
+      }
 
       // Find DOM element and position it (like sprite.position in 3D)
       const domElement = overlayRef.current.querySelector(`[data-link-id="${element.id}"]`);
@@ -170,7 +197,9 @@ const LinkTextOverlay = ({ nodes, links, fgRef, dimensions, visible = true }) =>
           style={{
             position: 'absolute',
             transform: 'translate(-50%, -50%)', // Center text on position
-            color: 'rgba(255, 255, 255, 0.9)', // Slightly transparent white
+            color: showBidirectional 
+              ? (element.isReverse ? '#2b6cff' : '#ff4d4d')  // Blue for reverse, red for forward
+              : 'rgba(255, 255, 255, 0.9)',                 // White for standard mode
             fontSize: '10px', // Slightly bigger text for better readability
             fontFamily: 'Inter, sans-serif',
             fontWeight: 'normal', // Normal weight, not bold

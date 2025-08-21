@@ -5,7 +5,6 @@ import { getNodeDisplayValue } from '../utils/graphUtils.js';
 import { GRAPH_CONSTANTS } from '../constants/graphConstants.js';
 import { SHAPE_2D, SHAPE_2D_ALT } from '../constants/shapeConstants.js';
 import { getNodeColor } from '../utils/colorUtils.js';
-import LinkTextOverlay from '../components/LinkTextOverlay.jsx';
 import NodeTitleOverlay from '../components/NodeTitleOverlay.jsx';
 
 const Graph2D = ({ 
@@ -118,6 +117,11 @@ const Graph2D = ({
         linkWidth={link => Math.max(1, (link.weight || 0.5) * GRAPH_CONSTANTS.GRAPH_2D.LINK_WIDTH_MULTIPLIER)}
         linkOpacity={0.6}
         
+        // Dynamic arrows based on link showArrow property
+        linkDirectionalArrowLength={l => l.showArrow ? (l.arrowLength || 6) : 0}
+        linkDirectionalArrowColor={l => l.showArrow ? (l.arrowColor || '#ff4d4d') : undefined}
+        linkDirectionalArrowRelPos={l => l.arrowPosition === 'source' ? 0.1 : 0.9}
+        
         // Animation particles
         linkDirectionalParticles={GRAPH_CONSTANTS.GRAPH_2D.PARTICLE_COUNT}
         linkDirectionalParticleWidth={GRAPH_CONSTANTS.GRAPH_2D.PARTICLE_WIDTH}
@@ -130,14 +134,6 @@ const Graph2D = ({
         enablePanInteraction={true}
       />
       
-      {/* HTML overlays for proper text layering */}
-      <LinkTextOverlay
-        nodes={nodes}
-        links={links}
-        fgRef={fgRef}
-        dimensions={dimensions}
-        visible={showLinkTexts}
-      />
       <NodeTitleOverlay
         nodes={nodes}
         fgRef={fgRef}

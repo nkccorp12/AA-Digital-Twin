@@ -101,6 +101,14 @@ function App() {
     const separateLinks2D = JSON.parse(JSON.stringify(processedLinks));
     const separateLinks3D = JSON.parse(JSON.stringify(processedLinks));
     
+    // Example: Configure arrows programmatically with configureArrows utility
+    // import { configureArrows } from './utils/graphUtils.js';
+    // const arrowConfig = {
+    //   "B1-S2": { showArrow: true, arrowPosition: "target" },
+    //   "B2-S2": { showArrow: true, arrowPosition: "target" }
+    // };
+    // separateLinks2D = configureArrows(separateLinks2D, arrowConfig);
+    
     return [separateNodes2D, separateNodes3D, separateLinks2D, separateLinks3D];
   }, [nodes, links, showBidirectional]);
 

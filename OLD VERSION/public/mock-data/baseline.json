@@ -129,14 +129,10 @@
       "influenceType": "compliance_flow"
     },
     {
-      "source": "S2",
-      "target": "B1",
+      "source": "B1",
+      "target": "S2",
       "weight": 0.67,
-      "influenceType": "regulatory_control",
-      "showArrow": true,
-      "arrowPosition": "source",
-      "arrowColor": "#66b3ff",
-      "arrowLength": 20
+      "influenceType": "regulatory_control"
     },
     {
       "source": "B2",
@@ -145,14 +141,10 @@
       "influenceType": "risk_management"
     },
     {
-      "source": "S2",
-      "target": "B2",
+      "source": "B2",
+      "target": "S2",
       "weight": 0.73,
-      "influenceType": "risk_control",
-      "showArrow": true,
-      "arrowPosition": "source",
-      "arrowColor": "#66b3ff",
-      "arrowLength": 20
+      "influenceType": "risk_control"
     },
     {
       "source": "B3",

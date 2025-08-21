@@ -141,6 +141,41 @@ export const pairHashAngle = (link) => {
 export const generateBidirectionalLinks = toBidirectional;
 
 /**
+ * Configure arrow heads for specific links
+ * @param {Array} links - Array of link objects
+ * @param {Object} arrowConfig - Configuration object mapping link IDs to arrow settings
+ * @returns {Array} Links with arrow configuration applied
+ * 
+ * Example usage:
+ * const arrowConfig = {
+ *   "S2-B1": { showArrow: true, arrowPosition: "source" },
+ *   "S2-B2": { showArrow: true, arrowPosition: "target" }
+ * };
+ * const configuredLinks = configureArrows(links, arrowConfig);
+ */
+export const configureArrows = (links, arrowConfig = {}) => {
+  return links.map(link => {
+    const linkId = `${link.source}-${link.target}`;
+    const reverseId = `${link.target}-${link.source}`;
+    
+    // Check both directions for configuration
+    const config = arrowConfig[linkId] || arrowConfig[reverseId];
+    
+    if (config) {
+      return {
+        ...link,
+        showArrow: config.showArrow || false,
+        arrowPosition: config.arrowPosition || 'target',
+        arrowColor: config.arrowColor || '#ff4d4d',
+        arrowLength: config.arrowLength || 6
+      };
+    }
+    
+    return link;
+  });
+};
+
+/**
  * Common graph props that are shared between 2D and 3D
  * @param {Object} options - Configuration options
  * @returns {Object} Common props object

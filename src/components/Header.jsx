@@ -1,5 +1,10 @@
+import React, { useState, useEffect } from 'react';
+
 const Header = ({ alternativeShapes = false }) => {
-  const nodeTypes = alternativeShapes ? [
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [delayedAlternativeShapes, setDelayedAlternativeShapes] = useState(alternativeShapes);
+  
+  const nodeTypes = delayedAlternativeShapes ? [
     {
       type: 'environment',
       color: '#ff4d4d', // Red
@@ -33,6 +38,19 @@ const Header = ({ alternativeShapes = false }) => {
     }
   ];
 
+  // Clean sequential animation: fade out → wait → change content → fade in
+  useEffect(() => {
+    setIsTransitioning(true);
+    
+    // After 1 second: update content and fade back in
+    const timer = setTimeout(() => {
+      setDelayedAlternativeShapes(alternativeShapes);
+      setIsTransitioning(false);
+    }, 1000); // 300ms fade out + 700ms wait + start fade in
+    
+    return () => clearTimeout(timer);
+  }, [alternativeShapes]);
+
   return (
     <div 
       style={{
@@ -45,7 +63,9 @@ const Header = ({ alternativeShapes = false }) => {
         backdropFilter: 'blur(12px)',
         border: '1px solid rgba(255, 255, 255, 0.1)',
         borderRadius: '0 0 8px 8px',
-        padding: '12px 24px'
+        padding: '12px 24px',
+        opacity: isTransitioning ? 0 : 1,
+        transition: 'opacity 0.3s ease-in-out'
       }}
     >
       <div style={{ 
