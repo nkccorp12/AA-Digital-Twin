@@ -6,11 +6,15 @@ const NodeLegend = ({
   showLinkTexts2D = true,
   showBidirectional = false,
   alternativeShapes = false,
+  showMainValues = true,
+  showInOutValues = false,
   onToggleFullscreen = () => {},
   onToggleRotation = () => {},
   onToggleLinkTexts2D = () => {},
   onToggleBidirectional = () => {},
-  onToggleAlternativeShapes = () => {}
+  onToggleAlternativeShapes = () => {},
+  onToggleMainValues = () => {},
+  onToggleInOutValues = () => {}
 }) => {
 
   return (
@@ -124,7 +128,7 @@ const NodeLegend = ({
           </button>
         </div>
 
-        {/* Center Section - Bidirectional Toggle Only */}
+        {/* Center Section - Value Controls & Toggle Buttons */}
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 
@@ -132,6 +136,68 @@ const NodeLegend = ({
           gap: '16px',
           flex: '1 1 auto'
         }}>
+          {/* Values Toggle Button */}
+          <button
+            onClick={onToggleMainValues}
+            style={{
+              backgroundColor: showMainValues ? '#10b981' : '#374151',
+              color: 'white',
+              border: 'none',
+              padding: '8px 12px',
+              borderRadius: '4px',
+              fontSize: '14px',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 'bold',
+              minWidth: '60px'
+            }}
+            onMouseEnter={(e) => e.target.style.opacity = '0.8'}
+            onMouseLeave={(e) => e.target.style.opacity = '1'}
+            title={showMainValues ? 'Hide Main Values' : 'Show Main Values'}
+          >
+            Values
+          </button>
+
+          {/* In/Out Values Toggle Button */}
+          <button
+            onClick={onToggleInOutValues}
+            disabled={showBidirectional}
+            style={{
+              backgroundColor: showInOutValues ? '#10b981' : '#374151',
+              color: 'white',
+              border: 'none',
+              padding: '8px 12px',
+              borderRadius: '4px',
+              fontSize: '14px',
+              cursor: showBidirectional ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 'bold',
+              minWidth: '60px',
+              opacity: showBidirectional ? 0.5 : 1
+            }}
+            onMouseEnter={(e) => {
+              if (!showBidirectional) e.target.style.opacity = '0.8';
+            }}
+            onMouseLeave={(e) => {
+              if (!showBidirectional) e.target.style.opacity = '1';
+            }}
+            title={
+              showBidirectional 
+                ? 'In/Out values not available in bidirectional mode' 
+                : showInOutValues 
+                  ? 'Hide In/Out Values' 
+                  : 'Show In/Out Values'
+            }
+          >
+            In/Out
+          </button>
+
           {/* Bidirectional Toggle Button */}
           <button
             onClick={() => {

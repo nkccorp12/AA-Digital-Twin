@@ -13,7 +13,8 @@ const Graph2D = ({
   onNodeClick, 
   dimensions,
   showLinkTexts = true,
-  alternativeShapes = false
+  alternativeShapes = false,
+  showBidirectional = false
 }) => {
   console.log('🎨 Graph2D render with alternativeShapes:', alternativeShapes);
   const fgRef = useRef();
@@ -117,9 +118,9 @@ const Graph2D = ({
         linkWidth={link => Math.max(1, (link.weight || 0.5) * GRAPH_CONSTANTS.GRAPH_2D.LINK_WIDTH_MULTIPLIER)}
         linkOpacity={0.6}
         
-        // Dynamic arrows based on link showArrow property
-        linkDirectionalArrowLength={l => l.showArrow ? (l.arrowLength || 6) : 0}
-        linkDirectionalArrowColor={l => l.showArrow ? (l.arrowColor || '#ff4d4d') : undefined}
+        // Dynamic arrows based on link showArrow property - only show on forward links in bidirectional mode  
+        linkDirectionalArrowLength={l => l.showArrow && (!showBidirectional || !l.isReverse) ? (l.arrowLength || 6) : 0}
+        linkDirectionalArrowColor={l => l.showArrow && (!showBidirectional || !l.isReverse) ? (l.arrowColor || '#ff4d4d') : undefined}
         linkDirectionalArrowRelPos={l => l.arrowPosition === 'source' ? 0.1 : 0.9}
         
         // Animation particles

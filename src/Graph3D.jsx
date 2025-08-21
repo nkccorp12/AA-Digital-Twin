@@ -8,7 +8,7 @@ import { GRAPH_CONSTANTS } from './constants/graphConstants.js';
 import { SHAPE_3D, SHAPE_3D_ALT } from './constants/shapeConstants.js';
 import { getNodeColor } from './utils/colorUtils.js';
 
-export default function Graph3D({ nodes = [], links = [], dimensions, isRotating = true, setIsRotating, showBidirectional = false, alternativeShapes = false }) {
+export default function Graph3D({ nodes = [], links = [], dimensions, isRotating = true, setIsRotating, showBidirectional = false, alternativeShapes = false, showMainValues = true, showInOutValues = false }) {
   const fgRef = useRef();
   const rotationIntervalRef = useRef();
   const angleRef = useRef(0); // Persist angle across start/stop
@@ -130,7 +130,7 @@ export default function Graph3D({ nodes = [], links = [], dimensions, isRotating
         const group = new THREE.Group();
         
         // Use fixed size since nodes don't have size property
-        const size = 7;  // Fixed smaller size
+        const size = 7 * 1.2;  // 20% bigger
         
         // Create 3D shape based on node type - using shape constants
         let geometry, material, shape;
@@ -175,15 +175,28 @@ export default function Graph3D({ nodes = [], links = [], dimensions, isRotating
         labelSprite.position.y = size + 4; // closer to shape
         group.add(labelSprite);
         
-        // Value sprite below shape (matching 2D graph) - adjust for bigger shape
-        const displayValue = getNodeDisplayValue(node);
+        // Value sprite(s) below shape (matching 2D graph) - adjust for bigger shape
+        const displayValue = getNodeDisplayValue(node, { showMainValues, showInOutValues });
         if (displayValue) {
-          const valueSprite = new SpriteText(displayValue);
-          valueSprite.material.depthWrite = false;
-          valueSprite.color = '#FFD700'; // Gold color like 2D
-          valueSprite.textHeight = GRAPH_CONSTANTS.GRAPH_3D.VALUE_TEXT_HEIGHT; // smaller text
-          valueSprite.position.y = -(size + 4); // closer to shape
-          group.add(valueSprite);
+          if (Array.isArray(displayValue)) {
+            // Multi-line display
+            displayValue.forEach((line, index) => {
+              const valueSprite = new SpriteText(line);
+              valueSprite.material.depthWrite = false;
+              valueSprite.color = '#FFD700'; // Gold color like 2D
+              valueSprite.textHeight = GRAPH_CONSTANTS.GRAPH_3D.VALUE_TEXT_HEIGHT; // smaller text
+              valueSprite.position.y = -(size + 4 + (index * 6)); // Stack lines below shape
+              group.add(valueSprite);
+            });
+          } else {
+            // Single line display
+            const valueSprite = new SpriteText(displayValue);
+            valueSprite.material.depthWrite = false;
+            valueSprite.color = '#FFD700'; // Gold color like 2D
+            valueSprite.textHeight = GRAPH_CONSTANTS.GRAPH_3D.VALUE_TEXT_HEIGHT; // smaller text
+            valueSprite.position.y = -(size + 4); // closer to shape
+            group.add(valueSprite);
+          }
         }
         
         return group;
@@ -225,6 +238,11 @@ export default function Graph3D({ nodes = [], links = [], dimensions, isRotating
         // Position sprite in middle of link
         Object.assign(sprite.position, middlePos);
       }}
+      // Dynamic arrows based on link showArrow property - only show on forward links in bidirectional mode
+      linkDirectionalArrowLength={l => l.showArrow && (!showBidirectional || !l.isReverse) ? ((l.arrowLength || 4) * 0.5) : 0}
+      linkDirectionalArrowColor={l => l.showArrow && (!showBidirectional || !l.isReverse) ? (l.arrowColor || (showBidirectional ? '#ff4d4d' : '#ff4d4d')) : undefined}
+      linkDirectionalArrowRelPos={l => l.arrowPosition === 'source' ? 0.05 : 0.95}
+      
       linkDirectionalParticles={2}     // animated Partikel auf Links
       linkDirectionalParticleSpeed={GRAPH_CONSTANTS.GRAPH_3D.PARTICLE_SPEED}
       linkDirectionalParticleColor={(link) => link.isReverse ? '#2b6cff' : '#ff4d4d'}  // Blue for reverse, red for original

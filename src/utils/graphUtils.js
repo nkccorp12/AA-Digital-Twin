@@ -42,20 +42,58 @@ export const calculateCentrality = (nodeId, links) => {
 };
 
 /**
- * Get display value for a node (stress level, confidence, or source count)
+ * Get display value for a node with support for multiple display modes
  * @param {Object} node - Node object
- * @returns {string} Display value
+ * @param {Object} options - Display options
+ * @param {boolean} options.showMainValues - Show main values (default: true)
+ * @param {boolean} options.showInOutValues - Show incoming/outgoing values (default: false)
+ * @returns {string|Array} Display value(s) - string for single line, array for multi-line
  */
-export const getNodeDisplayValue = (node) => {
-  // Priority: Stress Level > Confidence > Source Count
-  if (node.stressLevel !== undefined) {
-    return `${node.stressLevel.toFixed(1)}`;
-  } else if (node.metadata?.confidence) {
-    return `${(node.metadata.confidence * 100).toFixed(0)}%`;
-  } else if (node.metadata?.sourceCount) {
-    return `${node.metadata.sourceCount}`;
+export const getNodeDisplayValue = (node, options = {}) => {
+  const { showMainValues = true, showInOutValues = false } = options;
+  
+  // If no display modes are enabled, return empty
+  if (!showMainValues && !showInOutValues) {
+    return '';
   }
-  return '';
+  
+  const lines = [];
+  
+  // Main value line (stress level, confidence, or source count)
+  if (showMainValues) {
+    let mainValue = '';
+    if (node.mainValue !== undefined) {
+      // Use calculated mainValue if available
+      mainValue = `${node.mainValue.toFixed(1)}`;
+    } else if (node.stressLevel !== undefined) {
+      // Fallback to original stressLevel
+      mainValue = `${node.stressLevel.toFixed(1)}`;
+    } else if (node.metadata?.confidence) {
+      mainValue = `${(node.metadata.confidence * 100).toFixed(0)}%`;
+    } else if (node.metadata?.sourceCount) {
+      mainValue = `${node.metadata.sourceCount}`;
+    }
+    
+    if (mainValue) {
+      lines.push(mainValue);
+    }
+  }
+  
+  // In/Out values line
+  if (showInOutValues && node.incomingValue !== undefined && node.outgoingValue !== undefined) {
+    const inValue = node.incomingValue.toFixed(1);
+    const outValue = node.outgoingValue.toFixed(1);
+    lines.push(`↓${inValue} ↑${outValue}`);
+  }
+  
+  // Return single string for single line, array for multi-line
+  if (lines.length === 0) {
+    return '';
+  } else if (lines.length === 1) {
+    return lines[0];
+  } else {
+    return lines; // Return array for multi-line rendering
+  }
 };
 
 /**

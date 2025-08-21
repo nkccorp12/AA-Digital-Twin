@@ -8,7 +8,7 @@ import { setInitial3DPositions } from '../utils/forceSimulation.js';
 import { GRAPH_CONSTANTS } from '../constants/graphConstants.js';
 import { SHAPE_3D } from '../constants/shapeConstants.js';
 
-export default function Graph3D({ nodes = [], links = [], isRotating = true, setIsRotating }) {
+export default function Graph3D({ nodes = [], links = [], isRotating = true, setIsRotating, showBidirectional = false }) {
   const fgRef = useRef();
   const rotationIntervalRef = useRef();
   
@@ -86,7 +86,7 @@ export default function Graph3D({ nodes = [], links = [], isRotating = true, set
         const group = new THREE.Group();
         
         // Use fixed size since nodes don't have size property
-        const size = 5;  // Smaller size
+        const size = 5 * 1.2;  // 20% bigger
         
         // Create 3D shape based on node type - using shape constants
         let geometry, material, shape;
@@ -166,6 +166,11 @@ export default function Graph3D({ nodes = [], links = [], isRotating = true, set
         // Position sprite in middle of link
         Object.assign(sprite.position, middlePos);
       }}
+      // Dynamic arrows based on link showArrow property - only show on forward links in bidirectional mode
+      linkDirectionalArrowLength={l => l.showArrow && (!showBidirectional || !l.isReverse) ? ((l.arrowLength || 4) * 0.5) : 0}
+      linkDirectionalArrowColor={l => l.showArrow && (!showBidirectional || !l.isReverse) ? (l.arrowColor || '#ff4d4d') : undefined}
+      linkDirectionalArrowRelPos={l => l.arrowPosition === 'source' ? 0.05 : 0.95}
+      
       linkDirectionalParticles={GRAPH_CONSTANTS.GRAPH_3D.PARTICLE_COUNT}     // animated Partikel auf Links
       linkDirectionalParticleSpeed={GRAPH_CONSTANTS.GRAPH_3D.PARTICLE_SPEED}
       linkDirectionalParticleColor={GRAPH_CONSTANTS.COLORS.PARTICLE_COLOR}  // rote Partikel

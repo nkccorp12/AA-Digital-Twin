@@ -19,7 +19,9 @@ const Graph2D = ({
   dimensions,
   showBidirectional = false,
   alternativeShapes = false,
-  showLinkTexts = true
+  showLinkTexts = true,
+  showMainValues = true,
+  showInOutValues = false
 }) => {
   console.log('🔍 Graph2D: showLinkTexts =', showLinkTexts);
   const fgRef = useRef();
@@ -36,7 +38,7 @@ const Graph2D = ({
     if (!node.x || !node.y) return; // Skip if no position
     
     // Get node properties - make shapes bigger
-    const radius = (node.size || GRAPH_CONSTANTS.NODE_SIZES.MIN) * 1.2;  // 1.2x bigger
+    const radius = (node.size || GRAPH_CONSTANTS.NODE_SIZES.MIN) * 1.62;  // 1.62x (10% smaller than 1.8x)
     const color = getNodeColor(node.type, alternativeShapes);
     
     // Draw node shape based on type
@@ -55,28 +57,39 @@ const Graph2D = ({
     
     ctx.restore();
 
-    // Draw label above node
+    // Draw label above node (20% smaller text)
     const label = node.label || node.id;
     
-    const fontSize = Math.max(10, GRAPH_CONSTANTS.GRAPH_2D.FONT_SIZE / globalScale);
+    const fontSize = Math.max(8, (GRAPH_CONSTANTS.GRAPH_2D.FONT_SIZE * 0.8) / globalScale); // 20% smaller
     ctx.font = `${fontSize}px Inter, sans-serif`;
     ctx.fillStyle = GRAPH_CONSTANTS.COLORS.TEXT_PRIMARY;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
     ctx.fillText(label, node.x, node.y - radius - 2);
     
-    // Draw value below node
-    const displayValue = getNodeDisplayValue(node);
-    if (displayValue) {
-      const valueSize = Math.max(8, GRAPH_CONSTANTS.GRAPH_2D.VALUE_FONT_SIZE / globalScale);
-      ctx.font = `bold ${valueSize}px Inter, sans-serif`;
-      ctx.fillStyle = GRAPH_CONSTANTS.COLORS.TEXT_VALUE;
-      ctx.textBaseline = 'top';
-      ctx.fillText(displayValue, node.x, node.y + radius + 2);
+    // Draw main value INSIDE the node shape (black color, 20% smaller text)
+    if (showMainValues && node.mainValue !== undefined) {
+      const mainValueSize = Math.max(8, (GRAPH_CONSTANTS.GRAPH_2D.VALUE_FONT_SIZE * 1.2 * 0.8) / globalScale); // 20% smaller
+      ctx.font = `bold ${mainValueSize}px Inter, sans-serif`;
+      ctx.fillStyle = '#000000'; // Black color for contrast inside shape
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(node.mainValue.toFixed(1), node.x, node.y); // Center of shape
     }
-  }, [drawNodeShape, alternativeShapes]);
+    
+    // Draw in/out values BELOW the node shape (gold color, 20% smaller text)
+    if (showInOutValues && node.incomingValue !== undefined && node.outgoingValue !== undefined) {
+      const inOutSize = Math.max(6, (GRAPH_CONSTANTS.GRAPH_2D.VALUE_FONT_SIZE * 0.8) / globalScale); // 20% smaller
+      ctx.font = `bold ${inOutSize}px Inter, sans-serif`;
+      ctx.fillStyle = GRAPH_CONSTANTS.COLORS.TEXT_VALUE; // Gold color
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      const inOutText = `↓${node.incomingValue.toFixed(1)} ↑${node.outgoingValue.toFixed(1)}`;
+      ctx.fillText(inOutText, node.x, node.y + radius + 4);
+    }
+  }, [drawNodeShape, alternativeShapes, showMainValues, showInOutValues]);
 
-  // Configure forces when component mounts
+  // Configure forces and initial zoom when component mounts
   useEffect(() => {
     if (fgRef.current) {
       // Even stronger repulsion for optimal spacing
@@ -120,9 +133,9 @@ const Graph2D = ({
         linkCurvature={l => showBidirectional ? 0.3 : 0}
         linkCurveRotation={l => showBidirectional ? (l.isReverse ? Math.PI : 0) : 0}
         
-        // Dynamic arrows based on link showArrow property
-        linkDirectionalArrowLength={l => l.showArrow ? (l.arrowLength || 6) : 0}
-        linkDirectionalArrowColor={l => l.showArrow ? (l.arrowColor || (showBidirectional ? (l.isReverse ? REV_COLOR : FWD_COLOR) : '#ff4d4d')) : undefined}
+        // Dynamic arrows based on link showArrow property - only show on forward links in bidirectional mode
+        linkDirectionalArrowLength={l => l.showArrow && (!showBidirectional || !l.isReverse) ? (l.arrowLength || 6) : 0}
+        linkDirectionalArrowColor={l => l.showArrow && (!showBidirectional || !l.isReverse) ? (l.arrowColor || (showBidirectional ? FWD_COLOR : '#ff4d4d')) : undefined}
         linkDirectionalArrowRelPos={l => l.arrowPosition === 'source' ? 0.1 : 0.9}
         linkDirectionalParticles={GRAPH_CONSTANTS.GRAPH_3D.PARTICLE_COUNT}
         linkDirectionalParticleWidth={4}

@@ -20,16 +20,16 @@ const LinkTextOverlay = ({ nodes, links, fgRef, dimensions, visible = true, show
       const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
       const targetId = typeof link.target === 'object' ? link.target.id : link.target;
       
-      // Create link text (exact same format as 3D)
+      // Create link text (split for styling)
       const influenceText = link.influenceType || 'Connection';
       const weightText = link.weight ? `(${link.weight.toFixed(2)})` : '';
-      const linkText = `${influenceText} ${weightText}`;
 
       return {
         id: `${sourceId}-${targetId}`,
         sourceId,
         targetId,
-        text: linkText,
+        influenceText,
+        weightText,
         index,
         isReverse: link.isReverse || false
       };
@@ -187,7 +187,7 @@ const LinkTextOverlay = ({ nodes, links, fgRef, dimensions, visible = true, show
         width: dimensions.width2D,
         height: dimensions.height,
         pointerEvents: 'none', // Don't interfere with graph interactions
-        zIndex: 50 // Below node titles (which have zIndex: 200)
+        zIndex: 10 // Far below node titles (which have zIndex: 200)
       }}
     >
       {linkElements.map(element => (
@@ -197,9 +197,6 @@ const LinkTextOverlay = ({ nodes, links, fgRef, dimensions, visible = true, show
           style={{
             position: 'absolute',
             transform: 'translate(-50%, -50%)', // Center text on position
-            color: showBidirectional 
-              ? (element.isReverse ? '#2b6cff' : '#ff4d4d')  // Blue for reverse, red for forward
-              : 'rgba(255, 255, 255, 0.9)',                 // White for standard mode
             fontSize: '10px', // Slightly bigger text for better readability
             fontFamily: 'Inter, sans-serif',
             fontWeight: 'normal', // Normal weight, not bold
@@ -214,7 +211,25 @@ const LinkTextOverlay = ({ nodes, links, fgRef, dimensions, visible = true, show
             backdropFilter: 'blur(1px)' // Subtle blur effect
           }}
         >
-          {element.text}
+          {showBidirectional ? (
+            <>
+              <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                {element.influenceText}
+              </span>
+              {element.weightText && (
+                <>
+                  <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}> </span>
+                  <span style={{ color: element.isReverse ? '#2b6cff' : '#ff4d4d' }}>
+                    {element.weightText}
+                  </span>
+                </>
+              )}
+            </>
+          ) : (
+            <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+              {element.influenceText} {element.weightText}
+            </span>
+          )}
         </div>
       ))}
     </div>

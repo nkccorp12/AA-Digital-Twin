@@ -16,6 +16,12 @@ const Header = ({ alternativeShapes = false }) => {
       color: '#10b981', // Green
       label: 'Intern',
       description: 'Systems'
+    },
+    {
+      type: 'projection',
+      color: '#66b3ff', // Light blue like arrow heads
+      label: 'Projection',
+      description: 'Directional power'
     }
   ] : [
     {
@@ -35,6 +41,12 @@ const Header = ({ alternativeShapes = false }) => {
       color: '#F97316', // Warm Orange
       label: 'System', 
       description: 'Core operations'
+    },
+    {
+      type: 'projection',
+      color: '#66b3ff', // Light blue like arrow heads
+      label: 'Projection',
+      description: 'Directional power'
     }
   ];
 

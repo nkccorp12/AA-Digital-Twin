@@ -4,6 +4,7 @@ import Graph3D from './Graph3D.jsx';
 import NodeLegend from './components/NodeLegend';
 import Header from './components/Header';
 import { prepareNodes, toBidirectional } from './utils/graphUtils.js';
+import { calculateNodeValues } from './components/NodeCalculator.js';
 
 function App() {
   const [nodes, setNodes] = useState([]);
@@ -15,6 +16,8 @@ function App() {
   const [showLinkTexts2D, setShowLinkTexts2D] = useState(true);
   const [showBidirectional, setShowBidirectional] = useState(false);
   const [alternativeShapes, setAlternativeShapes] = useState(false);
+  const [showMainValues, setShowMainValues] = useState(true);
+  const [showInOutValues, setShowInOutValues] = useState(false);
   const rafIdRef = useRef(null);
   const lastUpdateTimeRef = useRef(0);
 
@@ -50,6 +53,13 @@ function App() {
       });
   }, []);
 
+  // Auto-disable In/Out values when bidirectional mode is enabled
+  useEffect(() => {
+    if (showBidirectional && showInOutValues) {
+      setShowInOutValues(false);
+    }
+  }, [showBidirectional, showInOutValues]);
+
   // Initialize positions for nodes (only once before cloning)
   const initPositions = (nodeArray) => {
     nodeArray.forEach(node => {
@@ -63,8 +73,9 @@ function App() {
   const [nodes2D, nodes3D, links2D, links3D] = useMemo(() => {
     if (nodes.length === 0) return [[], [], [], []];
     
-    // Prepare nodes with computed properties
-    const enhancedNodes = prepareNodes(nodes, links);
+    // Prepare nodes with computed properties and calculated values
+    const baseNodes = prepareNodes(nodes, links);
+    const enhancedNodes = calculateNodeValues(baseNodes, links);
     
     // Clean nodes (remove D3 artifacts but keep positions)
     const cleanNodes = enhancedNodes.map(({ vx, vy, vz, index, ...rest }) => ({ ...rest }));
@@ -176,6 +187,18 @@ function App() {
     });
   }, []);
 
+  // Toggle main values display
+  const toggleMainValues = useCallback(() => {
+    setShowMainValues(prev => !prev);
+  }, []);
+
+  // Toggle in/out values display (only available when not bidirectional)
+  const toggleInOutValues = useCallback(() => {
+    if (!showBidirectional) {
+      setShowInOutValues(prev => !prev);
+    }
+  }, [showBidirectional]);
+
   // Resizer drag handlers
   const handleMouseDown = useCallback((e) => {
     e.preventDefault();
@@ -267,6 +290,8 @@ function App() {
           showLinkTexts={showLinkTexts2D}
           showBidirectional={showBidirectional}
           alternativeShapes={alternativeShapes}
+          showMainValues={showMainValues}
+          showInOutValues={showInOutValues}
         />
       </div>
       
@@ -319,6 +344,8 @@ function App() {
           setIsRotating={setIsRotating}
           showBidirectional={showBidirectional}
           alternativeShapes={alternativeShapes}
+          showMainValues={showMainValues}
+          showInOutValues={showInOutValues}
         />
       </div>
       
@@ -330,11 +357,15 @@ function App() {
         showLinkTexts2D={showLinkTexts2D}
         showBidirectional={showBidirectional}
         alternativeShapes={alternativeShapes}
+        showMainValues={showMainValues}
+        showInOutValues={showInOutValues}
         onToggleFullscreen={toggleFullscreen}
         onToggleRotation={() => setIsRotating(!isRotating)}
         onToggleLinkTexts2D={toggleLinkTexts2D}
         onToggleBidirectional={toggleBidirectional}
         onToggleAlternativeShapes={toggleAlternativeShapes}
+        onToggleMainValues={toggleMainValues}
+        onToggleInOutValues={toggleInOutValues}
       />
     </div>
   );
